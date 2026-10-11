@@ -109,3 +109,66 @@ android-clean-exit-game.log, android-release-v2-apk-audit.txt,
 apk-build-clean-exit.log, launcher-tests-final.log,
 desktop-gx-android-final.log, and desktop-hires-android-final.log.
 Full-window screenshots capture the real emulator title bar and side controls.
+
+2026-10-11 performance follow-up (v3)
+------------------------------------
+The Android pollution callback now ends its completed numeric pixel-metric
+scope after reading it. Ordinary scene drawing no longer counts unused
+samples; subsequent Clear starts the next scope. Ordinary GX reads remain
+cumulative. GLES 3.1 ordinary draws also reuse retained CPU indices instead
+of reading index data back from the GPU to emulate base-vertex draws.
+
+Three additional regression checks cover cumulative reads, exclusion of
+later draws after explicit scope end (including repeated end), and restart
+with Clear. Android emulator GX 63/63, desktop GX 63/63, desktop HD texture
+checks 0 failures, and launcher Node 227/227 passed. The Android 15 ReDroid
+container also passed all 63 renderer checks on actual ARM64 libraries using
+its installed native bridge and SwiftShader GLES 3.2.
+
+Debug and release v3 APK builds succeeded. The development-signed release
+APK is validation/sms-launcher-arm64-release-test-v3.apk, SHA256:
+c75b61349c08e08b153119b5299eb76a3b57ebb762c71fbf6cf2106866886d56
+It contains only arm64-v8a SDL2, sms, and smsbootstrap libraries. All three
+have at least 16 KiB ELF LOAD alignment; zipalign -P 16 and v3 signature
+verification passed. No ROM, save, or debug self-test is bundled.
+
+The release played the ordinary opening movie at about 30 fps and reached
+the title. It loaded the existing Android-written one-Shine save, played
+prison/police movies (manually skipped where the A Skip prompt allowed),
+rendered the full native plaza camera sequence, reached player control,
+and rendered Mario jumping and moving. Android Back removed the game PID
+and resumed the launcher; the log has no FORTIFY mutex abort. The original
+desktop save hash remains 40c7263250c74316c3ae7a838012ca8fffe893ae4b6f2e4fcbcac88168c746ca.
+
+Observed debug plaza gameplay samples were 2.4–2.9 fps. Release arrival
+showed 5.3 fps (190 ms total, 157 ms GX); player-control samples were
+1.6–2.3 fps (426–610 ms total), compared with earlier baseline gameplay
+1.1–1.5 fps. These are scene samples, not a controlled same-frame benchmark.
+The release follow-up used the same Android 35 ARM64-translation emulator
+and NVIDIA host GLES, with a headless window and 1536 MiB guest RAM instead
+of the earlier 2560 MiB; the separate Android container/viewer also ran.
+These results do not establish AYN Thor performance.
+
+Container OS viewer and cleanup
+-------------------------------
+A separate Android 15 64-bit-only ReDroid container and KasmVNC/scrcpy viewer
+run locally at http://192.168.50.100:6901/. The browser viewer's authenticated
+HTTP endpoint responded successfully, and its real desktop/Android window
+was captured and inspected. Product-native browser automation RPC calls
+failed even for about:blank; browser automation inspection is not claimed.
+
+The downloaded ReDroid image advertised ARM64 but lacked translation
+libraries. Libraries from the already-working Android 15 SDK emulator,
+including libberberis_exec_region.so, were installed locally. ARM64 renderer
+checks then passed; game startup and movie rendering worked, but ordinary
+game startup stalled on a black scene after movie playback. Container
+gameplay/save loading is therefore unvalidated. Its GPU currently uses
+SwiftShader software rendering. The viewer was returned to Android Settings.
+
+At the user's request, retired Android 30 emulator data/system image, unused
+Android 35 snapshots, superseded build caches, SDK/JDK download archives,
+and temporary raw captures were removed: about 10.4 GiB of allocated task
+files. Worktrees, current SDK/build dependencies, emulator 35 save data, ROM,
+save backups, final APKs, and validation evidence were preserved. Cleanup
+manifest: validation/task-cleanup-2026-10-11.json. No unrelated Docker
+containers or volumes were pruned.
