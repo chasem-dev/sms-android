@@ -1,0 +1,111 @@
+Android validation — 2026-10-11
+
+Scope and environment
+---------------------
+Both repositories use isolated feat/android-arm64 worktrees. The Android port
+contains native-support commit 2827707, GLES streaming/caching commit 8502bba,
+and process-exit fix 68fd0f7. Original repositories and desktop saves were not
+modified. No ROM or save data is included in the APK.
+
+The test device is the Android 35 Google APIs x86_64 emulator on Linux/KVM,
+using NVIDIA host graphics, GLES 3.1, and libndk_translation 0.2.3. Its supported
+ABI list includes arm64-v8a; the installed application's native ABI is ARM64.
+This tests the actual ARM64 libraries through Android, with CPU translation.
+The older Android 30 bridge crashed on a valid ARM64 conversion instruction;
+that image was retired. No instruction-emulation workaround was added.
+
+Build and automated checks
+--------------------------
+JDK 17, Gradle 9.2.1, AGP 9.0.1, compile/target SDK 35, minimum SDK 29,
+NDK 28.2.13676358, CMake 3.22.1, and checksum-verified SDL 2.32.10.
+Both assembleDebug and assembleRelease completed successfully. The final
+incremental rebuild after the exit fix completed in 17 seconds. The first
+complete release build took 4 minutes 6 seconds. Builds use constrained worker
+and compiler parallelism; RAM was monitored during emulator/build work.
+
+The release APK contains exactly libSDL2.so, libsms.so, and libsmsbootstrap.so,
+all ELF64 AArch64 under lib/arm64-v8a/. Each PT_LOAD alignment is 16384 bytes.
+zipalign -c -P 16 4 passed. The installable release test APK is signed with the
+local Android development key; apksigner verifies its v3 signature. Production
+distribution needs the project's own signing configuration. Release builds
+omit the GX self-test library and ignore diagnostic intent extras.
+
+Release test APK SHA256:
+19e0a4cba23e447d3227df830bf45303f2e3a2d10f08fda06d75194d9f3a357a
+
+Android GX graphics self-test: 60 passed, 0 failed, returned 0.
+Desktop GX regression tests: 60 passed, 0 failed.
+Desktop HD texture tests: 0 failures.
+Launcher Node tests: 227 passed, 0 failed.
+An attempted x86_64 Android CMake configuration correctly fails the ARM64-only
+check. The graphics tests cover numeric pixel metrics, clipping, depth peeks,
+texture sampling, logic operations, and overlay state preservation.
+
+Runtime checks
+--------------
+Android's real document picker imported a US revision 0 disc image and a
+desktop card-a backup. Exported ZIP members were byte-equal to the imported
+card before the in-game save. Both launcher columns scroll independently in
+landscape, with Android system-bar insets respected.
+
+The imported slot A shows one Shine. It loaded into Delfino Plaza, including
+the native 3D arrival sequence, and reached player-controlled gameplay.
+Keyboard input through ADB moved Mario, moved the camera, jumped, opened Pause,
+and selected Save. The native Save complete prompt was observed; continuing
+returned to gameplay. Spray was first obscured by a wall in the debug session;
+the release recheck showed FLUDD water particles in front of Mario in response
+to a held spray input.
+
+Android card data changed from
+40c7263250c74316c3ae7a838012ca8fffe893ae4b6f2e4fcbcac88168c746ca
+to
+39a4973f53e38ec0496fab86d191b79dab3c24e66d8365abdd98d1686f6a967f
+after Save complete. The original desktop card retained its original hash.
+
+Opening, prison explanation, and police arrival movies were watched unskipped
+before the GLES performance changes. The final release APK's ordinary opening
+movie was watched through to the title screen, without diagnostic intent
+extras or movie skipping. The Android-written card was then reloaded, retained
+the slot's one-Shine progress, rendered the native plaza arrival sequence, and
+reached player control in the release APK. Its police arrival movie also played
+through. The repeated prison movie was skipped using its normal in-game Skip
+control after partial playback. Repeated debug gameplay checks used the
+SMS_SKIP_MOVIES flag; the flag does not skip native 3D camera sequences.
+
+Back returns to LauncherActivity and removes the game process. A cleanup race
+in exit() was found and fixed: the dedicated Android game process now flushes
+its log and terminates without global destructors racing SDK worker threads.
+A subsequent normal Play starts a fresh process and plays the opening movie.
+The corrected exit log has no FORTIFY mutex-abort messages.
+
+Performance and limits
+----------------------
+At 1x internal resolution and the 60 fps setting, the debug overlay showed
+roughly 18–20 fps at the title and 1–1.2 fps in Delfino Plaza. Plaza rendering
+cost roughly 750–900 ms per frame, with game logic roughly 35–45 ms. Expensive
+GLES ordered numeric pixel-metric draws are a principal renderer bottleneck.
+Removing per-triangle synchronous uniform queries and GPU index readbacks
+resolved multi-minute frame stalls, but does not make this emulator playable
+at full speed. These measurements are not an AYN Thor benchmark.
+
+In the release build's plaza arrival, another overlay sample showed 1.5 fps,
+635.9 ms rendering, 33.5 ms game logic, and 674.6 ms average total frame time.
+Release movie playback showed a stable 30 fps. Neither the debug nor release
+plaza measurements establish performance on native ARM64 handheld hardware.
+
+Physical handheld performance, thermals, controller feel, rumble, audible
+output, and actual 16 KiB-page runtime remain untested. The emulator was
+started with host audio disabled; the Android audio queue initialized, but
+audibility is not claimed. Keyboard input validates control functionality,
+not a physical gamepad. This launcher currently covers the base game; Eclipse
+and HD texture-pack installation remain desktop-launcher features.
+
+Local evidence
+--------------
+Logs and screenshots are in /home/netflix/android-work/validation/ and
+/home/netflix/android-work/tools/. Key logs: android-gx-async-final.log,
+android-final-native-save-game.log, android-native-save-hashes.txt,
+android-clean-exit-game.log, android-release-v2-apk-audit.txt,
+apk-build-clean-exit.log, launcher-tests-final.log,
+desktop-gx-android-final.log, and desktop-hires-android-final.log.
+Full-window screenshots capture the real emulator title bar and side controls.
