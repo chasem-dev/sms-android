@@ -160,10 +160,10 @@ failed even for about:blank; browser automation inspection is not claimed.
 The downloaded ReDroid image advertised ARM64 but lacked translation
 libraries. Libraries from the already-working Android 15 SDK emulator,
 including libberberis_exec_region.so, were installed locally. ARM64 renderer
-checks then passed; game startup and movie rendering worked, but ordinary
-game startup stalled on a black scene after movie playback. Container
-gameplay/save loading is therefore unvalidated. Its GPU currently uses
-SwiftShader software rendering. The viewer was returned to Android Settings.
+checks then passed; game startup and movie rendering initially worked, but ordinary
+game startup stalled on a black scene after movie playback. The follow-up
+below fixes that loading hang and validates container save loading/gameplay.
+Its GPU uses SwiftShader software rendering; it is not a handheld benchmark.
 
 At the user's request, retired Android 30 emulator data/system image, unused
 Android 35 snapshots, superseded build caches, SDK/JDK download archives,
@@ -172,3 +172,54 @@ files. Worktrees, current SDK/build dependencies, emulator 35 save data, ROM,
 save backups, final APKs, and validation evidence were preserved. Cleanup
 manifest: validation/task-cleanup-2026-10-11.json. No unrelated Docker
 containers or volumes were pruned.
+
+2026-10-11 container gameplay and final PR build (v4–v6)
+-------------------------------------------------------
+Slow Android presentation consumed the retrace interval, keeping the main
+SDK thread runnable and starving lower-priority stage-loading work. Android
+frame waits now block for one retrace when background loading is runnable
+and the frame has not already waited. Deterministic and desktop timing paths
+are unchanged. At the normal VI clock, both debug and optimized release
+container builds now reach the title, load slot A's one-Shine save, render
+the full native plaza arrival and reach player control. Jumping and movement
+were observed. Back closes the game process without a FORTIFY mutex abort.
+Prerecorded movies were skipped for these gameplay/performance runs.
+
+ReDroid Android 15 is 64-bit-only x86_64 with the same ARM64 bridge, ANGLE
+SwiftShader GLES 3.2, 1280x720 landscape, 1x internal scale, 16:9 and the
+60 fps game setting. Backend RAM is capped at 3 GiB; viewer RAM at 1 GiB.
+Release v4 stationary plaza samples, each 45 seconds with the first partial
+30-frame window discarded:
+  2 CPU quota: 120 measured frames, 297.8 ms/frame, 3.36 fps.
+  3 CPU quota: 240 measured frames, 160.225 ms/frame, 6.24 fps.
+  2 CPU repeat with unrelated host builds: 90 frames, 341.9 ms, 2.92 fps.
+The host is an i5-6600K with four cores; CPU contention and dynamic scene
+activity limit comparisons. These are software-renderer observations, not
+physical-device FPS predictions. The NVIDIA DRM host path is not supported
+by this container setup, so it cannot use the host GPU directly here.
+
+The ordinary overlay's swap field includes driver completion waits, not
+only exchanging buffers. Its explicit GPU-wait field measures separate
+fence/readback waits. An optional Android-only SMS_GX_FINISH_BEFORE_SWAP=1
+diagnostic forces glFinish before swapping and logs both durations; default
+is off. In a 45-second v5 plaza gameplay diagnostic, 210 measured frames
+averaged 121.4 ms waiting for render completion and 2.9 ms in buffer swap.
+Total was 197.57 ms/frame (5.06 fps). This serializes rendering and is not a
+normal benchmark or an asynchronous GPU timestamp.
+
+Both repositories incorporated main's fixes before the final v6 build.
+assembleDebug and assembleRelease passed. Final desktop GX: 63/63; Android
+container GX: 63/63; launcher Node tests: 228/228. v3 desktop HD checks remain
+zero failures. The v6 optimized release APK has exactly three ARM64 libraries,
+all PT_LOAD aligned to 16384 bytes; zipalign -P 16 and signature verification
+passed. Release omits self-test libraries and diagnostic intent handling.
+The test APK is development-signed, not production-signed, and contains no
+ROM or save data. Physical-device performance, thermals, audio/controller
+feel, rumble and actual 16 KiB runtime still require tester validation.
+
+Final test APK: sms-launcher-arm64-release-test-v6.apk
+SHA256: 1ea42bf3c3706d69ea2d62be52e0a872edbef883155b58ba50a54c3a929c6f69
+Local logs: apk-build-pr-final-v6.log, launcher-tests-pr-final.log,
+desktop-gx-pr-final.log, android-container-v6-gx-observed.txt, and
+android-container-v4-gameplay-{2cpu-a,3cpu,2cpu-b-contended}.{log,json}.
+Swap diagnostic: android-container-v5-swap-diagnostic.{log,json,split.json}.
