@@ -13,10 +13,12 @@ issue numbers, file or function names. Fixes say what was wrong.
 
 ## Releases
 
-Follow the README's "Releases" section. Increment `smsAndroidPreview` for each
-published preview, never reuse a version, and keep signing with the key
-`release.sh` checks for: Android refuses updates signed with a different key,
-so testers would have to uninstall and lose their disc and saves.
+Merging into `main` publishes a release whenever `## Unreleased` has lines, so
+only merge what's ready for testers. Don't bump the preview number or move
+changelog lines yourself; the release workflow does both (see the README's
+"Releases" section). Never change the signing key `release.sh` checks for:
+Android refuses updates signed with a different key, so testers would have to
+uninstall and lose their disc and saves.
 
 ## The game
 
