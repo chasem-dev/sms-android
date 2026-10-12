@@ -71,6 +71,8 @@ public class LauncherActivity extends Activity {
         choice("Resolution scale", "resolution", new String[]{"1", "2", "3"}, "1");
         choice("Aspect ratio", "widescreen", new String[]{"off", "16:9"}, "16:9");
         choice("Volume", "volume", new String[]{"0", "25", "50", "75", "100"}, "100");
+        toggle("Android performance hints", "performance_hints", true);
+        toggle("Show performance overlay", "performance_overlay", false);
         label("Connect a Bluetooth or USB controller, or use the built-in controls on an Android handheld. Android Back returns to the launcher. Disc images and save backups are copied into private app storage; uninstalling removes them.", 15);
         refresh();
     }
@@ -104,10 +106,19 @@ public class LauncherActivity extends Activity {
             public void onNothingSelected(AdapterView<?> p) {}
         }); content.addView(s);
     }
+    private void toggle(String title, String key, boolean fallback) {
+        CheckBox box = new CheckBox(this);
+        box.setText(title); box.setTextColor(Color.WHITE);
+        box.setChecked(prefs.getBoolean(key, fallback));
+        box.setOnCheckedChangeListener((view, checked) -> prefs.edit().putBoolean(key, checked).apply());
+        content.addView(box);
+    }
     private void writeSettings() throws IOException {
         String text = "frame_rate=" + prefs.getString("frame_rate", "60") + "\nresolution=" + prefs.getString("resolution", "1")
             + "\nwidescreen=" + prefs.getString("widescreen", "16:9") + "\nvolume=" + prefs.getString("volume", "100")
-            + "\nmsaa=0\nfullscreen=on\nvsync=on\nbutton_prompts=auto\n";
+            + "\nmsaa=0\nfullscreen=on\nvsync=on\nbutton_prompts=auto\n"
+            + "SMS_ANDROID_PERFORMANCE_HINTS=" + (prefs.getBoolean("performance_hints", true) ? "1" : "0")
+            + "\nSMS_OVERLAY=" + (prefs.getBoolean("performance_overlay", false) ? "1" : "0") + "\n";
         try (FileOutputStream out = new FileOutputStream(new File(game, "settings.txt"))) { out.write(text.getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
     }
     private void refresh() { message(disc.isFile() ? "Disc ready · " + (disc.length() / 1048576) + " MB" : "No disc imported yet."); }

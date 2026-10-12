@@ -262,3 +262,53 @@ Logs: android-container-v7-gx.log, android-container-v7-release-startup.log,
 desktop-gx-adreno-v7.log, launcher-tests-adreno-v7.log,
 apk-build-adreno-v7-final.log, android-release-v7-apk-audit.json,
 and android-release-v7-signature.txt.
+
+2026-10-12 Android game classification and performance hints (v8)
+----------------------------------------------------------------
+The S24 Ultra tester confirmed v7 renders gameplay, selected 60 FPS and
+reported lower clocks/FPS without screen recording, with approximately
+61 Surface FPS while recording. The recording screenshot shows about
+2246 MHz on the CPU cluster and 422 MHz GPU, compared with the prior
+231 MHz GPU sample. These are tester reports/snapshots, not a controlled
+same-camera benchmark or a sustained device performance guarantee.
+
+The manifest now declares appCategory=game, verified in the compiled APK
+as category 0. This identifies the application for game policies; it does
+not grant extra cores/RAM or bypass power/thermal limits. Optional Android
+12+ performance hints register the native frame-producing SDK thread and
+its GL worker when enabled. Android normally executes both on one thread;
+IDs are deduplicated. The frame-work cycle is reported before the SDK's
+intentional retrace sleep and restarted afterward. Driver/graphics waits
+remain included: this is wall time on the frame-production path, not an
+asynchronous GPU time or CPU utilization measurement. The target follows
+actual frame cadence, including 30 fps menus/movies and 60 fps gameplay.
+
+Runtime symbol lookup preserves Android 10/11 support. Missing/rejected
+services disable hints once. Backgrounding closes the session and discards
+partial timing; returning recreates it. Shutdown explicitly closes it.
+The default-on Android performance hints checkbox allows device comparisons;
+the default-off Show performance overlay checkbox exposes the port's own
+FPS and game/GX/presentation/swap/idle measurements. Both persist preferences
+and are written by ordinary launcher Play.
+
+Debug and optimized release builds passed. Android and desktop GX: 66/66;
+launcher Node tests: 228/228. The standalone performance-hint controller test
+passed thread-group selection/deduplication, invalid budgets, target updates,
+thread replacement, pause/resume and rejected/unsupported service handling.
+The Android container accepted a real hint session and work reports. The
+observed budget changed from 33.37 ms to 16.68 ms when loading slot A into
+the game. The ordinary Play exercised movie playback and the port overlay;
+Back returned to the launcher and removed the game PID. Turning the hints
+checkbox off and pressing Play wrote SMS_ANDROID_PERFORMANCE_HINTS=0 and
+logged performance hints disabled, with ordinary video still rendering.
+This does not test whether Samsung's scheduler raises clocks or whether FPS improves on device.
+
+v8 APK: sms-launcher-arm64-release-test-v8.apk
+SHA256: e1654de7344a2fef8662be9530f153b42ce6322d1c8a4db1ce49c65065ecc9ed
+ARM64-only libraries; 16 KiB ELF/APK alignment and development signature
+verified. Install over the previous preview with existing ROM/save retained.
+Logs: android-container-v8-gx.log, android-container-v8-hints-on.log,
+android-container-v8-hints-off.log,
+desktop-gx-performance-v8.log, launcher-tests-performance-v8.log,
+performance-session-tests-v8.log, apk-build-performance-v8-final.log,
+android-release-v8-apk-audit.json and android-release-v8-signature.txt.

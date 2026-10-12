@@ -41,6 +41,12 @@ US revision 0 Sunshine ISO or GCM using Android's document picker. Import
 copies it into private app storage; allow enough free space for that copy.
 Choose frame rate, resolution scale, aspect ratio and volume, then **Play**.
 Connect a USB/Bluetooth controller or use the handheld's built-in gamepad.
+**Android performance hints** defaults on and lets supported devices adjust
+CPU scheduling to the frame workload. It does not force clock speeds or
+bypass thermal limits. Toggle it off to compare the same scene and settings.
+**Show performance overlay** reports the port's game/shown FPS, frame time,
+game work, GX submission, presentation/swap and idle time. This helps
+separate game timing from an external SurfaceFlinger FPS counter.
 Android Back returns to the launcher. Each game session uses a fresh process.
 
 **Export save backup** writes a ZIP you can keep or move to the desktop port's
