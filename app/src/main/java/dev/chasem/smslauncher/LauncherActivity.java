@@ -31,10 +31,18 @@ public class LauncherActivity extends Activity {
         card = new File(root, "saves/card-a"); game = new File(root, "game");
         disc.getParentFile().mkdirs(); card.mkdirs(); game.mkdirs(); new File(game, "cache").mkdirs();
         prefs = getSharedPreferences("settings", MODE_PRIVATE);
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setBackgroundColor(Color.rgb(12, 26, 42));
         LinearLayout columns = new LinearLayout(this);
         columns.setOrientation(LinearLayout.HORIZONTAL);
-        columns.setBackgroundColor(Color.rgb(12, 26, 42));
-        columns.setOnApplyWindowInsetsListener((view, insets) -> {
+        columns.setPadding(dp(8), dp(8), dp(8), 0);
+        layout.addView(columns, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1));
+        TextView build = new TextView(this);
+        build.setText(BuildInfo.summary()); build.setTextSize(13); build.setTextColor(Color.LTGRAY);
+        build.setPadding(dp(20), dp(6), dp(20), dp(6));
+        layout.addView(build);
+        layout.setOnApplyWindowInsetsListener((view, insets) -> {
             android.graphics.Insets safe = android.os.Build.VERSION.SDK_INT >= 30
                 ? insets.getInsets(android.view.WindowInsets.Type.systemBars() | android.view.WindowInsets.Type.displayCutout())
                 : android.graphics.Insets.of(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
@@ -42,11 +50,9 @@ public class LauncherActivity extends Activity {
             view.setPadding(safe.left, safe.top, safe.right, safe.bottom);
             return insets;
         });
-        setContentView(columns);
-        content = panel(columns);
-        label("Super Mario Sunshine", 30);
-        label("PC port · Android · 64-bit", 16);
-        label("Import a US revision 0 disc image, then play with your handheld's controls or a connected controller.", 16);
+        setContentView(layout);
+        content = panel(columns, "Super Mario Sunshine");
+        label("Import a US revision 0 disc image, then play with your handheld's controls or a connected controller.", 14);
         status = label("", 16);
         button("Play", () -> {
             if (!disc.isFile()) { message("Import a disc image first."); return; }
@@ -61,12 +67,11 @@ public class LauncherActivity extends Activity {
             catch (IOException e) { message(e.getMessage()); }
         });
         button("Import disc image", () -> pick(DISC));
-        label("Saves and diagnostics", 22);
+        label("Saves and diagnostics", 18);
         button("Import save backup (.zip)", () -> pick(IMPORT_SAVE));
         button("Export save backup", () -> create(EXPORT_SAVE, "application/zip", "sunshine-save.zip"));
         button("Export game log", () -> create(EXPORT_LOG, "text/plain", "sunshine-game.log"));
-        content = panel(columns);
-        label("Game settings", 22);
+        content = panel(columns, "Game settings");
         choice("Frame rate", "frame_rate", new String[]{"30", "60"}, "60");
         choice("Resolution scale", "resolution", new String[]{"1", "2", "3"}, "1");
         choice("Aspect ratio", "widescreen", new String[]{"off", "16:9"}, "16:9");
@@ -80,18 +85,33 @@ public class LauncherActivity extends Activity {
         refresh();
     }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
-    private LinearLayout panel(LinearLayout columns) {
+    private LinearLayout panel(LinearLayout columns, String title) {
+        LinearLayout card = new LinearLayout(this); card.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams size = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1);
+        size.setMargins(dp(6), 0, dp(6), 0); columns.addView(card, size);
+        android.graphics.drawable.GradientDrawable background = new android.graphics.drawable.GradientDrawable();
+        background.setColor(Color.rgb(18, 36, 52)); background.setCornerRadius(dp(12));
+        card.setBackground(background); card.setClipToOutline(true);
+        TextView heading = new TextView(this); heading.setText(title); heading.setTextSize(22);
+        heading.setTextColor(Color.WHITE); heading.setPadding(dp(16), dp(10), dp(16), 0); card.addView(heading);
+        TextView hint = new TextView(this); hint.setText("Swipe up or down to scroll"); hint.setTextSize(12);
+        hint.setTextColor(Color.LTGRAY); hint.setPadding(dp(16), dp(2), dp(16), dp(8)); card.addView(hint);
         ScrollView scroll = new ScrollView(this);
-        columns.addView(scroll, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1));
+        scroll.setVerticalScrollBarEnabled(true); scroll.setScrollbarFadingEnabled(false);
+        scroll.setScrollBarStyle(View.SCROLLBARS_OUTSIDE_INSET);
+        android.graphics.drawable.GradientDrawable thumb = new android.graphics.drawable.GradientDrawable();
+        thumb.setColor(Color.rgb(140, 170, 190)); thumb.setCornerRadius(dp(2)); thumb.setSize(dp(4), dp(24));
+        scroll.setVerticalScrollbarThumbDrawable(thumb);
+        card.addView(scroll, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1));
         LinearLayout panel = new LinearLayout(this); panel.setOrientation(LinearLayout.VERTICAL);
-        panel.setPadding(dp(20), dp(12), dp(20), dp(20)); scroll.addView(panel);
+        panel.setPadding(dp(16), 0, dp(16), dp(12)); scroll.addView(panel);
         return panel;
     }
     @Override protected void onResume() { super.onResume(); if (status != null && !busy) refresh(); }
     @Override protected void onDestroy() { io.shutdown(); super.onDestroy(); }
     private TextView label(String text, int size) {
         TextView v = new TextView(this); v.setText(text); v.setTextSize(size); v.setTextColor(Color.WHITE);
-        v.setPadding(0, dp(4), 0, dp(6)); content.addView(v); return v;
+        v.setPadding(0, dp(3), 0, dp(4)); content.addView(v); return v;
     }
     private void button(String text, Runnable action) {
         Button b = new Button(this); b.setText(text); b.setAllCaps(false);

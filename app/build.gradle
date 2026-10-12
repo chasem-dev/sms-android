@@ -4,6 +4,26 @@ def portRoot = file(providers.gradleProperty('smsPortRoot').getOrElse('../../../
 def sdlRoot = file(providers.gradleProperty('smsSdlRoot').getOrElse("${portRoot}/build/deps/SDL2-2.32.10"))
 def launcherPackage = new groovy.json.JsonSlurper().parse(file('../../package.json'))
 def versionParts = launcherPackage.version.tokenize('.').collect { it as int }
+def previewBuild = providers.gradleProperty('smsAndroidPreview').getOrElse('0').toInteger()
+if (previewBuild < 0 || previewBuild > 99)
+    throw new GradleException('smsAndroidPreview must be between 0 and 99')
+def sourceRevision = { File root ->
+    if (!new File(root, '.git').exists()) return 'unknown'
+    def revision = providers.exec {
+        workingDir root
+        commandLine 'git', 'rev-parse', '--short=8', 'HEAD'
+        ignoreExitValue true
+    }.standardOutput.asText.get().trim()
+    if (!revision) return 'unknown'
+    def dirty = providers.exec {
+        workingDir root
+        commandLine 'git', 'diff', '--quiet', 'HEAD', '--'
+        ignoreExitValue true
+    }.result.get().exitValue != 0
+    return revision + (dirty ? '-modified' : '')
+}
+def launcherRevision = sourceRevision(file('../..'))
+def gameRevision = sourceRevision(portRoot)
 
 android {
     namespace 'dev.chasem.smslauncher'
@@ -13,8 +33,10 @@ android {
         applicationId 'dev.chasem.smslauncher'
         minSdk 29
         targetSdk 35
-        versionCode versionParts[0] * 1000000 + versionParts[1] * 10000 + versionParts[2] * 100
-        versionName launcherPackage.version + '-android'
+        versionCode versionParts[0] * 1000000 + versionParts[1] * 10000 + versionParts[2] * 100 + previewBuild
+        versionName launcherPackage.version + '-android' + (previewBuild ? "-preview.${previewBuild}" : '')
+        buildConfigField 'String', 'LAUNCHER_REVISION', groovy.json.JsonOutput.toJson(launcherRevision)
+        buildConfigField 'String', 'GAME_REVISION', groovy.json.JsonOutput.toJson(gameRevision)
         ndk { abiFilters 'arm64-v8a' }
         externalNativeBuild {
             cmake {

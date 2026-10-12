@@ -361,3 +361,23 @@ proof of game logic cadence.
 Logs: apk-build-policy-v9.log, desktop-gx-policy-v9.log,
 launcher-tests-policy-v9.log, performance-session-tests-v9.log,
 android-release-v9-signature.txt, android-release-v9-apk-audit.json.
+
+
+v10 build identification (2026-10-12)
+------------------------------------
+Both panels now use fixed headings, explicit swipe hints, persistent overflow
+scrollbars, and tighter spacing within separate cards. Adds an always-visible
+launcher footer with version, Android preview number,
+build variant, ARM64 and launcher/game source revisions. Game logs include
+that metadata at startup. Android version name now includes preview.10;
+version code increases from 15700 to 15710. This is a build-identification
+change; the game code and performance requests remain those from v9.
+The game revision is read from the actual port checkout (1402cf5a), rather
+than the desktop release pin. Modified tracked sources are marked; Gitless
+archives explicitly show unknown. Release builders must increment the
+preview property and commit sources before generating each tester APK.
+
+No Android container/emulator run or benchmark is permitted for this
+follow-up. Validate compilation, host launcher checks, embedded APK
+metadata, development signature and ARM64/16 KiB packaging. Actual Android
+footer rendering and installer behavior still require the tester's device.

@@ -34,6 +34,25 @@ For a release build, run `./gradlew :app:assembleRelease -PsmsPortRoot=...`
 inside `android/` after preparing SDL. Release signing uses your own Android
 signing configuration; do not distribute an unsigned APK or share a key.
 
+## Build identification
+
+Both landscape panels scroll independently, with fixed headings, a swipe hint
+and persistent scrollbars when content overflows. The launcher keeps a two-line
+footer visible while either panel scrolls.
+It shows the launcher version, Android preview number, debug/release variant,
+ARM64 architecture and the launcher/game source revisions actually built.
+Tracked local edits add `-modified`; source archives without Git show `unknown`.
+The same metadata is written to the game log at startup and survives log export.
+The game revision comes from the port checkout, not the desktop game pin.
+
+For each published tester APK, increment `smsAndroidPreview` in
+`android/gradle.properties` (1–99). It appears in the Android version name and
+increments its version code within that launcher version, so each new preview
+is an identifiable update. Use 0 for a build without a preview suffix. Commit
+release sources before building so the footer names a clean source revision.
+Install over the previous preview to retain data. Export a save backup before
+uninstalling; uninstalling also removes the imported disc.
+
 ## Use
 
 Install the APK, open the landscape SMS Launcher, and choose **Import disc image**. Pick a

@@ -70,6 +70,7 @@ public class GameActivity extends SDLActivity {
         PowerManager power = getSystemService(PowerManager.class);
         Display display = getWindow().getDecorView().getDisplay();
         args.add("--env"); args.add("SMS_ANDROID_STARTUP_POLICY=" + gamePolicy
+            + "; " + BuildInfo.summary().replace('\n', ';')
             + ", battery saver " + (power != null && power.isPowerSaveMode())
             + ", display " + (display == null ? "unknown" : display.getRefreshRate() + " Hz")
             + ", " + displayRequest);
