@@ -88,7 +88,8 @@ adb shell am start -W -n dev.chasem.smslauncher/.LauncherActivity \
 adb shell run-as dev.chasem.smslauncher cat files/game/game.log
 ```
 
-Wait for `63 passed, 0 failed` and `GX self-test returned 0` in the log.
+Wait for `66 passed, 0 failed` and `GX self-test returned 0` in the log
+(`63 passed` if the GLES clipping extension is unavailable).
 Export or copy that log before the next Play session replaces it. Force-stop
 and reopen the launcher without the intent extras to resume ordinary gameplay.
 The self-test library and diagnostic intent handling are omitted from release

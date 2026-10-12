@@ -223,3 +223,42 @@ Local logs: apk-build-pr-final-v6.log, launcher-tests-pr-final.log,
 desktop-gx-pr-final.log, android-container-v6-gx-observed.txt, and
 android-container-v4-gameplay-{2cpu-a,3cpu,2cpu-b-contended}.{log,json}.
 Swap diagnostic: android-container-v5-swap-diagnostic.{log,json,split.json}.
+
+2026-10-12 Adreno 750 black-screen fix (v7)
+-------------------------------------------
+A tester reported immediate black video with audio on an S24 Ultra running
+Android 16. The supplied game log identifies Qualcomm Adreno 750 GLES 3.2
+V@0762.41 and successful context creation, followed by repeated shader
+compile/link errors: gl_ClipDistance is a reserved built-in name. The error
+is at the adapter's explicit standalone out float gl_ClipDistance[2] line.
+
+The GLES adapter now relies on EXT_clip_cull_distance's predeclared array
+and sizes it implicitly with constant indices 0 and 1, as the extension
+specification allows. The extension, writes and both hardware clip planes
+remain enabled. Shader failure logs now show the adapted GLES source sent
+to the compiler. The shader cache already hashes adapted source, so changed
+programs automatically invalidate previous binary cache entries.
+Specification: https://registry.khronos.org/OpenGL/extensions/EXT/EXT_clip_cull_distance.txt
+
+Three pixel checks exercise near/far rejection and retained inside geometry
+on contexts supporting clip distances. Android ReDroid with shader cache off:
+66 passed, 0 failed, with 13 shaders compiled and no GL errors. Desktop GX:
+66 passed, 0 failed. Launcher Node: 228 passed, 0 failed. Debug and optimized
+release APKs compiled; v7 retains ARM64-only libraries, 16 KiB ELF/APK
+alignment and a verified development signature. Release startup at 30 fps,
+1x scale and 4:3 rendered the native title with shader caching disabled;
+no shader compile/link errors were observed in the captured startup log.
+Prerecorded movies were skipped in that local startup check.
+
+The updated APK was installed over the previous build with ROM/save data
+retained. The Adreno device itself is not available here: the replacement
+still requires an S24 Ultra retry to confirm the reported device now renders.
+This does not claim Android 16 or Adreno hardware validation from the Android
+15 software-renderer test.
+
+APK: sms-launcher-arm64-release-test-v7.apk
+SHA256: 55fec6f4ebb74086c61f93e8433fa41274e79cac7d0a39d74da4d44b276c4d6b
+Logs: android-container-v7-gx.log, android-container-v7-release-startup.log,
+desktop-gx-adreno-v7.log, launcher-tests-adreno-v7.log,
+apk-build-adreno-v7-final.log, android-release-v7-apk-audit.json,
+and android-release-v7-signature.txt.
