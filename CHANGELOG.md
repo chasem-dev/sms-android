@@ -6,6 +6,8 @@ and moves them under that preview's heading. See AGENTS.md.
 
 ## Unreleased
 
+## 0.2.0-preview.1
+
 - The Android launcher now has its own version numbers, starting at 0.2.0, and is released from its own page. Install it over preview 17 to keep your disc and saves.
 
 ## 0.1.57-android-preview.17 and earlier
