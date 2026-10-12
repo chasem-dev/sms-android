@@ -24,7 +24,7 @@ public class GameActivity extends SDLActivity {
             @Override public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
                 // Set before SDL starts its native thread, and again when the
                 // surface is recreated. This is a display hint, not a CPU lock.
-                if (Build.VERSION.SDK_INT >= 30 && settings().getBoolean("match_display_rate", true)) {
+                if (Build.VERSION.SDK_INT >= 30 && settings().getBoolean("match_display_rate", false)) {
                     float rate = "30".equals(settings().getString("frame_rate", "60")) ? 30f : 60f;
                     try {
                         holder.getSurface().setFrameRate(rate, Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE);

@@ -371,8 +371,13 @@ launcher footer with version, Android preview number,
 build variant, ARM64 and launcher/game source revisions. Game logs include
 that metadata at startup. Android version name now includes preview.10;
 version code increases from 15700 to 15710. This is a build-identification
-change; the game code and performance requests remain those from v9.
-The game revision is read from the actual port checkout (1402cf5a), rather
+change. Following a report that v9 ran much slower (near 30 FPS until a
+screenshot temporarily raised it), experimental headroom and display
+matching now default off. The original full-frame ADPF deadline is used
+unless explicitly enabled. Existing saved choices are preserved, so upgraded
+testers should check those switches manually. The cause and improvement
+remain unverified.
+The game revision is read from the actual port checkout, rather
 than the desktop release pin. Modified tracked sources are marked; Gitless
 archives explicitly show unknown. Release builders must increment the
 preview property and commit sources before generating each tester APK.
