@@ -6,7 +6,7 @@ newer, with GLES 3.1 or newer and a controller.
 AYN Thor and similar modern Android handhelds are the intended hardware.
 See [VALIDATION.txt](VALIDATION.txt) for build and emulator results. Plaza
 gameplay is currently slow in the ARM64-translating emulator; handheld
-performance has not been measured.
+performance has not been measured on AYN Thor. An S24 Ultra tester reports near-60 FPS while recording but lower FPS during ordinary play; the new policy requests still require physical-device validation.
 
 ## Build
 
@@ -44,6 +44,27 @@ Connect a USB/Bluetooth controller or use the handheld's built-in gamepad.
 **Android performance hints** defaults on and lets supported devices adjust
 CPU scheduling to the frame workload. It does not force clock speeds or
 bypass thermal limits. Toggle it off to compare the same scene and settings.
+**Request performance headroom** defaults on and asks ADPF to finish frame
+work within 80% of the frame interval (about 13.35 ms at nominal 60 FPS),
+leaving a margin for presentation and scheduling variation. It changes the
+requested deadline, not game speed or reported measurements. Switch it off
+to restore the v8 full-frame target. This is a tuning experiment, not a
+confirmed fix for a manufacturer's clock policy. Supported Android 15+
+sessions explicitly disable power-efficiency preference, which is already
+the platform default; that call alone does not imply a boost.
+**Match display refresh to game FPS** defaults on and sends a Surface frame
+rate hint on Android 11+. Android chooses the actual display refresh rate.
+The game also reports interruptible gameplay while its activity is resumed
+and no gameplay on pause using Android 13+ Game State. The selected Android
+Game Mode is read on resume; the app cannot select Performance mode for you.
+No game-mode configuration overrides the manufacturer's interventions.
+**Log performance timings** defaults off. Enable it to export steady frame
+and presentation timing, SDK pacing waits and main-thread CPU time without
+recording or touching the screen during the sample. A current CPU frequency
+sample is included when Android allows reading it; -1 means unavailable.
+These timers add some overhead, and swap/wait times are CPU wall time,
+not asynchronous GPU measurements. Startup logs include Game Mode, reported
+Game State, battery saver, current display refresh and the frame rate request.
 **Show performance overlay** reports the port's game/shown FPS, frame time,
 game work, GX submission, presentation/swap and idle time. This helps
 separate game timing from an external SurfaceFlinger FPS counter.

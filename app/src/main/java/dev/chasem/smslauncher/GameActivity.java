@@ -1,11 +1,63 @@
 package dev.chasem.smslauncher;
 
 import android.os.Bundle;
+import android.os.Build;
+import android.os.PowerManager;
+import android.app.GameManager;
+import android.app.GameState;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.view.Surface;
+import android.view.SurfaceHolder;
+import android.view.Display;
 import java.io.File;
 import java.util.ArrayList;
 import org.libsdl.app.SDLActivity;
+import org.libsdl.app.SDLSurface;
 
 public class GameActivity extends SDLActivity {
+    private volatile String displayRequest = "not requested";
+    private volatile String gamePolicy = "not queried";
+    private SharedPreferences settings() { return getSharedPreferences("settings", MODE_PRIVATE); }
+    @Override protected SDLSurface createSDLSurface(Context context) {
+        return new SDLSurface(context) {
+            @Override public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+                // Set before SDL starts its native thread, and again when the
+                // surface is recreated. This is a display hint, not a CPU lock.
+                if (Build.VERSION.SDK_INT >= 30 && settings().getBoolean("match_display_rate", true)) {
+                    float rate = "30".equals(settings().getString("frame_rate", "60")) ? 30f : 60f;
+                    try {
+                        holder.getSurface().setFrameRate(rate, Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE);
+                        displayRequest = "requested " + rate + " FPS";
+                    } catch (RuntimeException e) { displayRequest = "rejected: " + e.getClass().getSimpleName(); }
+                } else displayRequest = Build.VERSION.SDK_INT < 30 ? "unavailable" : "disabled";
+                super.surfaceChanged(holder, format, width, height);
+            }
+        };
+    }
+    private void reportGamePolicy(boolean playing) {
+        if (Build.VERSION.SDK_INT < 31) { gamePolicy = "GameManager unavailable"; return; }
+        try {
+            GameManager manager = getSystemService(GameManager.class);
+            if (manager == null) { gamePolicy = "GameManager unavailable"; return; }
+            int mode = manager.getGameMode();
+            String name = mode == GameManager.GAME_MODE_PERFORMANCE ? "performance"
+                : mode == GameManager.GAME_MODE_BATTERY ? "battery"
+                : mode == GameManager.GAME_MODE_STANDARD ? "standard" : "unsupported";
+            String state = "unavailable";
+            if (Build.VERSION.SDK_INT >= 33) {
+                // Sunshine is pausable; do not claim uninterruptible network
+                // play or permanent loading to obtain an inappropriate boost.
+                manager.setGameState(new GameState(false,
+                    playing ? GameState.MODE_GAMEPLAY_INTERRUPTIBLE : GameState.MODE_NONE));
+                state = playing ? "gameplay interruptible" : "none";
+            }
+            gamePolicy = "game mode " + name + ", reported state " + state;
+        } catch (RuntimeException e) { gamePolicy = "GameManager rejected: " + e.getClass().getSimpleName(); }
+        android.util.Log.i("SMSLauncher", gamePolicy);
+    }
+    @Override protected void onResume() { reportGamePolicy(true); super.onResume(); }
+    @Override protected void onPause() { super.onPause(); reportGamePolicy(false); }
     @Override protected String[] getLibraries() { return new String[]{"SDL2", "smsbootstrap"}; }
     @Override protected String[] getArguments() {
         File data = new File(getFilesDir(), "game");
@@ -15,6 +67,12 @@ public class GameActivity extends SDLActivity {
         args.add("--disc"); args.add(new File(getFilesDir(), "disc/game.iso").getAbsolutePath());
         args.add("--env"); args.add("SMS_SAVE_DIR=" + new File(getFilesDir(), "saves/card-a").getAbsolutePath());
         args.add("--env"); args.add("SMS_SETTINGS=" + new File(data, "settings.txt").getAbsolutePath());
+        PowerManager power = getSystemService(PowerManager.class);
+        Display display = getWindow().getDecorView().getDisplay();
+        args.add("--env"); args.add("SMS_ANDROID_STARTUP_POLICY=" + gamePolicy
+            + ", battery saver " + (power != null && power.isPowerSaveMode())
+            + ", display " + (display == null ? "unknown" : display.getRefreshRate() + " Hz")
+            + ", " + displayRequest);
         if (BuildConfig.DEBUG) {
             if (getIntent().getBooleanExtra("gxSelftest", false)) { args.add("--gx-selftest"); args.add("1"); }
             String[] testEnvironment = getIntent().getStringArrayExtra("testEnvironment");

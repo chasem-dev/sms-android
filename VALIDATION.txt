@@ -312,3 +312,52 @@ android-container-v8-hints-off.log,
 desktop-gx-performance-v8.log, launcher-tests-performance-v8.log,
 performance-session-tests-v8.log, apk-build-performance-v8-final.log,
 android-release-v8-apk-audit.json and android-release-v8-signature.txt.
+
+
+v9 policy/headroom candidate (2026-10-12)
+-----------------------------------------
+The S24 Ultra / Android 16 tester reports no improvement from v8 during
+ordinary, non-recorded play. Its exported log shows accepted hint sessions,
+but only a startup work measurement; acceptance is not evidence of boosting.
+Notifications, touches and screen recording reportedly raise clocks and
+restore near-60 FPS. This is an observation, not an isolated cause.
+
+v9 changes the actual Android requests, beyond diagnostics:
+- Game State reports pausable gameplay while the game activity is resumed,
+  and MODE_NONE on pause, on Android 13+. Game Mode is queried on resume;
+  no game-mode configuration overrides OEM interventions, and the app
+  cannot select Performance mode itself.
+- Default-on Request performance headroom sets ADPF's target to 80% of the
+  real frame interval, about 13.35 ms at nominal 60 FPS. Work reports are not
+  inflated, game speed is unchanged, and disabling it restores v8's target.
+- Optional Android 15 power-efficiency preference is explicitly false;
+  false is already the OS default, so that call alone is not a boost fix.
+- Default-on Match display refresh to game FPS sends a Surface rate hint
+  on Android 11+. Actual display refresh remains the OS's choice.
+- Optional hidden-overlay timing logs include steady work/pacing/present
+  timings and main-thread CPU time. Frequency reads may be unavailable.
+
+Validation for v9: debug/release Android builds passed; host graphics 66/66
+with timing logging enabled, including hidden-overlay no-upload checks;
+launcher Node tests 228/228; hint controller tests cover headroom budgets,
+thread grouping/lifecycle, basic service failures and optional-policy
+rejection without losing basic hints. APK signature and 16 KiB ELF/APK
+alignment pass. ARM64 only; no disc, save or self-test in the release APK.
+
+No v9 Android runtime/container/emulator test or benchmark was run, per the
+user's instruction. Previous Android correctness checks described above
+apply to earlier revisions. v9's Android lifecycle/API behavior and effect
+on Samsung clocks/FPS require a tester run; no performance gain is claimed.
+
+APK: sms-launcher-arm64-release-test-v9.apk
+SHA256: 4bad831387adb81e5efe5326ea80a1e71486277190953ea43d92a48299ebeb78
+Install over v8 with the same development signing key; retain disc/save.
+For comparison: 60 FPS, scale 1, performance hints/headroom/display match on,
+recording off. To diagnose, enable Log performance timings, leave a fixed
+plaza view for 30 seconds without screen touches or notifications, return
+with Back, and Export game log before another Play. Compare headroom off
+in the same scene if performance remains low. Do not treat Surface FPS as
+proof of game logic cadence.
+Logs: apk-build-policy-v9.log, desktop-gx-policy-v9.log,
+launcher-tests-policy-v9.log, performance-session-tests-v9.log,
+android-release-v9-signature.txt, android-release-v9-apk-audit.json.
