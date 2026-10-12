@@ -1,9 +1,9 @@
 plugins { id 'com.android.application' }
 
-def portRoot = file(providers.gradleProperty('smsPortRoot').getOrElse('../../../sms-port'))
+def portRoot = file(providers.gradleProperty('smsPortRoot').getOrElse('../sms-port'))
 def sdlRoot = file(providers.gradleProperty('smsSdlRoot').getOrElse("${portRoot}/build/deps/SDL2-2.32.10"))
-def launcherPackage = new groovy.json.JsonSlurper().parse(file('../../package.json'))
-def versionParts = launcherPackage.version.tokenize('.').collect { it as int }
+def androidVersion = providers.gradleProperty('smsAndroidVersion').get()
+def versionParts = androidVersion.tokenize('.').collect { it as int }
 def previewBuild = providers.gradleProperty('smsAndroidPreview').getOrElse('0').toInteger()
 if (previewBuild < 0 || previewBuild > 99)
     throw new GradleException('smsAndroidPreview must be between 0 and 99')
@@ -22,7 +22,7 @@ def sourceRevision = { File root ->
     }.result.get().exitValue != 0
     return revision + (dirty ? '-modified' : '')
 }
-def launcherRevision = sourceRevision(file('../..'))
+def launcherRevision = sourceRevision(file('..'))
 def gameRevision = sourceRevision(portRoot)
 
 android {
@@ -34,7 +34,7 @@ android {
         minSdk 29
         targetSdk 35
         versionCode versionParts[0] * 1000000 + versionParts[1] * 10000 + versionParts[2] * 100 + previewBuild
-        versionName launcherPackage.version + '-android' + (previewBuild ? "-preview.${previewBuild}" : '')
+        versionName androidVersion + (previewBuild ? "-preview.${previewBuild}" : '')
         buildConfigField 'String', 'LAUNCHER_REVISION', groovy.json.JsonOutput.toJson(launcherRevision)
         buildConfigField 'String', 'GAME_REVISION', groovy.json.JsonOutput.toJson(gameRevision)
         ndk { abiFilters 'arm64-v8a' }
@@ -49,7 +49,6 @@ android {
     sourceSets {
         main {
             java.srcDirs += "${sdlRoot}/android-project/app/src/main/java"
-            assets.srcDirs += ['../../src/android', '../../src/assets']
         }
     }
     buildFeatures { buildConfig true }

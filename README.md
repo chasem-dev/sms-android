@@ -1,9 +1,23 @@
-# Android launcher
+# SMS Launcher for Android
 
-This is a native Android companion to the desktop launcher. The APK includes
-the compiled PC port and SDL, but no game data. It targets ARM64 Android 10 or
-newer, with GLES 3.1 or newer and a controller.
-AYN Thor and similar modern Android handhelds are the intended hardware.
+A native Android launcher for the [Super Mario Sunshine PC port](https://github.com/chasem-dev/sms-pc-port).
+The APK includes the compiled port and SDL, but no game data: you import a disc
+image made from your own copy. It targets ARM64 Android 10 or newer, with
+GLES 3.1 or newer and a controller. AYN Thor and similar modern Android
+handhelds are the intended hardware. On Windows, macOS and Linux, use the
+desktop [SMS Launcher](https://github.com/chasem-dev/sms-launcher) instead.
+
+## Download
+
+Tester APKs are published as pre-releases on this repository's
+[Releases](https://github.com/chasem-dev/sms-android/releases) page. Install
+over the previous preview to keep your imported disc and saves. Previews 1 to
+17 were published from the desktop launcher's repository as
+`android-pr-107-v*` pre-releases; this repository's builds update them in place.
+[CHANGELOG.md](CHANGELOG.md) lists what changed in each preview.
+
+## Status
+
 See [VALIDATION.txt](VALIDATION.txt) for build and emulator results. Plaza
 gameplay is currently slow in the ARM64-translating emulator; handheld
 performance has not been measured on AYN Thor. An S24 Ultra tester reports
@@ -19,9 +33,17 @@ controlled matching-camera benchmark.
 
 ## Build
 
-Keep the Android port checkout beside this launcher checkout as `sms-port`,
-or set `SMS_PORT_ROOT` to its location. Install a JDK (17 or newer), Python 3,
-CMake, Git, curl, tar, patch, and the Android SDK. Install these SDK packages:
+The game comes from the `sms-port` submodule, pinned to the
+[sms-pc-port](https://github.com/chasem-dev/sms-pc-port) commit this launcher
+builds. Clone with submodules:
+
+```sh
+git clone --recurse-submodules https://github.com/chasem-dev/sms-android.git
+```
+
+To build a different port checkout, set `SMS_PORT_ROOT` to its location.
+Install a JDK (17 or newer), Python 3, CMake, Git, curl, tar, patch, and the
+Android SDK. Install these SDK packages:
 
 ```
 platform-tools platforms;android-35 build-tools;36.0.0
@@ -31,34 +53,51 @@ ndk;28.2.13676358 cmake;3.22.1
 Accept the SDK licenses, set `ANDROID_HOME` and `JAVA_HOME`, and run:
 
 ```sh
-npm run android:build
+./build.sh
 ```
 
 The script downloads checksum-verified SDL 2.32.10, initializes the port's
 decompilation submodule, and uses the checked-in Gradle wrapper to build only
 `arm64-v8a`. The installable debug APK is
-`android/app/build/outputs/apk/debug/app-debug.apk`.
+`app/build/outputs/apk/debug/app-debug.apk`.
 
-For a release build, run `./gradlew :app:assembleRelease -PsmsPortRoot=...`
-inside `android/` after preparing SDL. Release signing uses your own Android
-signing configuration; do not distribute an unsigned APK or share a key.
+`tests/check-input-monitor.sh` runs the input monitor's unit tests without the
+Android SDK.
+
+## Releases
+
+1. Update the pinned game if needed: `git -C sms-port checkout <commit>`, then
+   commit the submodule change.
+2. Increment `smsAndroidPreview` in `gradle.properties` (1–99), or raise
+   `smsAndroidVersion` and reset the preview number for a new release line.
+3. Move the `Unreleased` lines in `CHANGELOG.md` under a heading for the new
+   version name, e.g. `## 0.2.0-preview.18`. Commit everything.
+4. Run `./release.sh` to build, align and sign the release APK into `dist/`,
+   then `./release.sh --publish` to also create the GitHub pre-release with
+   that changelog section as its notes.
+
+The release script refuses to run with uncommitted changes, so the footer
+names clean source revisions. It signs with `~/.android/debug.keystore` unless
+`SMS_ANDROID_KEYSTORE` (and `SMS_ANDROID_KEYSTORE_PASS`, `SMS_ANDROID_KEY_ALIAS`)
+name another key, and refuses to sign with a certificate other than the one
+previous previews used, because Android won't install an update signed with a
+different key over an existing install. Never commit or share the keystore.
 
 ## Build identification
 
 Both landscape panels scroll independently, with fixed headings, a swipe hint
 and persistent scrollbars when content overflows. The launcher keeps a two-line
 footer visible while either panel scrolls.
-It shows the launcher version, Android preview number, debug/release variant,
+It shows the launcher version, preview number, debug/release variant,
 ARM64 architecture and the launcher/game source revisions actually built.
 Tracked local edits add `-modified`; source archives without Git show `unknown`.
 The same metadata is written to the game log at startup and survives log export.
-The game revision comes from the port checkout, not the desktop game pin.
+The game revision is the `sms-port` commit that was built.
 
-For each published tester APK, increment `smsAndroidPreview` in
-`android/gradle.properties` (1–99). It appears in the Android version name and
-increments its version code within that launcher version, so each new preview
-is an identifiable update. Use 0 for a build without a preview suffix. Commit
-release sources before building so the footer names a clean source revision.
+`smsAndroidVersion` and `smsAndroidPreview` in `gradle.properties` set the
+version name (`0.2.0-preview.18`) and version code (major × 1000000 +
+minor × 10000 + patch × 100 + preview), so each new preview is an
+identifiable update. Use preview 0 for a build without a preview suffix.
 Install over the previous preview to retain data. Export a save backup before
 uninstalling; uninstalling also removes the imported disc.
 
