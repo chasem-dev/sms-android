@@ -1,13 +1,14 @@
 # Changelog
 
-What changed in each Android preview, newest first. `./release.sh --publish`
-uses a version's section as its release notes. See AGENTS.md.
+What changed in each Android preview, newest first. Each push to `main` with
+lines under Unreleased publishes a new preview with those lines as its notes,
+and moves them under that preview's heading. See AGENTS.md.
 
 ## Unreleased
 
 - The Android launcher now has its own version numbers, starting at 0.2.0, and is released from its own page. Install it over preview 17 to keep your disc and saves.
 
-## Previews 1 to 17 (0.1.57-android-preview.17 and earlier)
+## 0.1.57-android-preview.17 and earlier
 
 Published as `android-pr-107-v*` pre-releases from the desktop launcher's repository.
 

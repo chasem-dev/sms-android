@@ -66,22 +66,34 @@ Android SDK.
 
 ## Releases
 
-1. Update the pinned game if needed: `git -C sms-port checkout <commit>`, then
-   commit the submodule change.
-2. Increment `smsAndroidPreview` in `gradle.properties` (1–99), or raise
-   `smsAndroidVersion` and reset the preview number for a new release line.
-3. Move the `Unreleased` lines in `CHANGELOG.md` under a heading for the new
-   version name, e.g. `## 0.2.0-preview.18`. Commit everything.
-4. Run `./release.sh` to build, align and sign the release APK into `dist/`,
-   then `./release.sh --publish` to also create the GitHub pre-release with
-   that changelog section as its notes.
+Merging a pull request into `main` publishes a release automatically, through
+`.github/workflows/release.yml`, when `CHANGELOG.md` has lines under
+`## Unreleased`:
 
-The release script refuses to run with uncommitted changes, so the footer
-names clean source revisions. It signs with `~/.android/debug.keystore` unless
-`SMS_ANDROID_KEYSTORE` (and `SMS_ANDROID_KEYSTORE_PASS`, `SMS_ANDROID_KEY_ALIAS`)
-name another key, and refuses to sign with a certificate other than the one
-previous previews used, because Android won't install an update signed with a
-different key over an existing install. Never commit or share the keystore.
+1. It numbers the next preview of `smsAndroidVersion` (`0.2.0-preview.1`,
+   `0.2.0-preview.2`, …) from the existing release tags.
+2. It builds the release APK with `release.sh`, signed with the keystore in
+   the `ANDROID_KEYSTORE_BASE64` repository secret.
+3. It publishes a GitHub pre-release with the Unreleased lines as its notes,
+   then commits those lines under the new preview's heading in `CHANGELOG.md`.
+
+Pull requests with nothing under Unreleased (tests, CI, docs) publish nothing.
+To start a new release line, raise `smsAndroidVersion` in `gradle.properties`;
+previews then count from 1 again. Each version allows 99 previews. Pull
+requests are built by `.github/workflows/build.yml`, which uploads the debug
+APK as an artifact.
+
+To move the game, check out the new commit in the submodule
+(`git -C sms-port checkout <commit>`), commit it with a changelog line for
+each change testers will notice, and merge.
+
+`./release.sh` builds the same signed APK locally into `dist/`. It refuses to
+run with uncommitted changes, so the footer names clean source revisions. It
+signs with `~/.android/debug.keystore` unless `SMS_ANDROID_KEYSTORE` (and
+`SMS_ANDROID_KEYSTORE_PASS`, `SMS_ANDROID_KEY_ALIAS`) name another key, and
+refuses to sign with a certificate other than the one previous previews used,
+because Android won't install an update signed with a different key over an
+existing install. Never commit or share the keystore.
 
 ## Build identification
 
@@ -94,10 +106,10 @@ Tracked local edits add `-modified`; source archives without Git show `unknown`.
 The same metadata is written to the game log at startup and survives log export.
 The game revision is the `sms-port` commit that was built.
 
-`smsAndroidVersion` and `smsAndroidPreview` in `gradle.properties` set the
-version name (`0.2.0-preview.18`) and version code (major × 1000000 +
+`smsAndroidVersion` in `gradle.properties` and the preview number set the
+version name (`0.2.0-preview.1`) and version code (major × 1000000 +
 minor × 10000 + patch × 100 + preview), so each new preview is an
-identifiable update. Use preview 0 for a build without a preview suffix.
+identifiable update. Local builds use preview 0 and have no preview suffix.
 Install over the previous preview to retain data. Export a save backup before
 uninstalling; uninstalling also removes the imported disc.
 

@@ -1,0 +1,89 @@
+name: Release
+
+# Each push to main (a merged pull request) whose CHANGELOG.md has lines under
+# Unreleased publishes the next preview APK with those lines as its notes.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      # Build main's latest commit, not the pushed one: a run that waited for
+      # an earlier release then sees that release's changelog update.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          submodules: true
+          fetch-depth: 0
+      - name: Choose the version
+        id: version
+        run: |
+          python3 scripts/changelog.py notes > "$RUNNER_TEMP/notes.md"
+          if [[ ! -s "$RUNNER_TEMP/notes.md" ]]; then
+            echo 'Nothing under Unreleased in CHANGELOG.md, so nothing to release.'
+            echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          version=$(sed -n 's/^smsAndroidVersion=//p' gradle.properties)
+          last=$(git tag -l "v$version-preview.*" | sed "s/^v$version-preview\.//" | sort -n | tail -1)
+          preview=$(( ${last:-0} + 1 ))
+          if (( preview > 99 )); then
+            echo "::error::$version has used all 99 previews. Raise smsAndroidVersion in gradle.properties."; exit 1
+          fi
+          echo "preview=$preview" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "name=$version-preview.$preview" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-java@v4
+        if: steps.version.outputs.skip != 'true'
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android SDK packages
+        if: steps.version.outputs.skip != 'true'
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            'platforms;android-35' 'build-tools;36.0.0' 'ndk;28.2.13676358' 'cmake;3.22.1' > /dev/null
+      - name: Build and sign the APK
+        if: steps.version.outputs.skip != 'true'
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          SMS_ANDROID_PREVIEW: ${{ steps.version.outputs.preview }}
+        run: |
+          [[ -n "$ANDROID_KEYSTORE_BASE64" ]] || { echo '::error::Add the signing keystore as the ANDROID_KEYSTORE_BASE64 secret.'; exit 1; }
+          export SMS_ANDROID_KEYSTORE="$RUNNER_TEMP/release.keystore"
+          base64 -d <<< "$ANDROID_KEYSTORE_BASE64" > "$SMS_ANDROID_KEYSTORE"
+          ./release.sh --max-workers=4
+          rm -f "$SMS_ANDROID_KEYSTORE"
+      - name: Publish the release
+        if: steps.version.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAME: ${{ steps.version.outputs.name }}
+          SHA: ${{ steps.version.outputs.sha }}
+        run: |
+          gh release create "v$NAME" "dist/sms-android-$NAME-arm64.apk" "dist/sms-android-$NAME-arm64.apk.sha256" \
+            --prerelease --target "$SHA" --title "Android $NAME" --notes-file "$RUNNER_TEMP/notes.md"
+      - name: Move the released lines out of Unreleased
+        if: steps.version.outputs.skip != 'true'
+        env:
+          NAME: ${{ steps.version.outputs.name }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for attempt in 1 2 3; do
+            git fetch -q origin main && git reset -q --hard origin/main
+            python3 scripts/changelog.py release "$NAME" "$RUNNER_TEMP/notes.md"
+            git commit -qam "Changelog for $NAME" -m 'No changelog: release notes only'
+            git push -q origin HEAD:main && exit 0
+          done
+          echo '::error::Could not push the changelog update.'; exit 1

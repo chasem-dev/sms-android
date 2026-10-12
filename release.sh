@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# Build, align and sign the release APK into dist/. With --publish, also
-# create the GitHub pre-release with the version's CHANGELOG.md section.
+# Build, align and sign the release APK into dist/. SMS_ANDROID_PREVIEW
+# overrides gradle.properties' preview number; extra arguments go to Gradle.
+# Pushes to main publish releases through .github/workflows/release.yml.
 set -euo pipefail
 root=$(cd "$(dirname "$0")" && pwd)
 cd "$root"
-publish=0
-[[ ${1:-} == --publish ]] && publish=1
 
 # Android only installs an update signed with the same certificate as the
 # installed app. Previews 1-17 used this one; signing with another key would
@@ -28,17 +27,12 @@ fi
 
 prop() { sed -n "s/^$1=//p" gradle.properties; }
 version=$(prop smsAndroidVersion)
-preview=$(prop smsAndroidPreview)
+preview=${SMS_ANDROID_PREVIEW:-$(prop smsAndroidPreview)}
 name=$version
 [[ $preview == 0 ]] || name="$version-preview.$preview"
-tag="v$name"
-notes=$(awk -v h="## $name" '$0 == h { on = 1; next } on && /^## / { exit } on' CHANGELOG.md | sed '/./,$!d')
-if (( publish )) && [[ -z "$notes" ]]; then
-  echo "CHANGELOG.md has no \"## $name\" section to publish." >&2; exit 1
-fi
 
 sms-port/android/build-native.sh --prepare
-./gradlew :app:assembleRelease "-PsmsPortRoot=$root/sms-port"
+./gradlew :app:assembleRelease "-PsmsPortRoot=$root/sms-port" "-PsmsAndroidPreview=$preview" "${@}"
 
 mkdir -p dist
 apk="dist/sms-android-$name-arm64.apk"
@@ -54,8 +48,3 @@ fi
 (cd dist && sha256sum "$(basename "$apk")" > "$(basename "$apk").sha256")
 echo "Built $apk"
 cat "$apk.sha256"
-
-if (( publish )); then
-  gh release create "$tag" "$apk" "$apk.sha256" --repo chasem-dev/sms-android \
-    --prerelease --target "$(git rev-parse HEAD)" --title "Android preview $preview ($name)" --notes "$notes"
-fi
