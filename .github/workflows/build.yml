@@ -22,6 +22,8 @@ jobs:
             'platforms;android-35' 'build-tools;36.0.0' 'ndk;28.2.13676358' 'cmake;3.22.1' > /dev/null
       - name: Input monitor tests
         run: bash tests/check-input-monitor.sh
+      - name: Controller mapping tests
+        run: bash tests/check-controller-mapping.sh
       - name: Build debug APK
         run: ./build.sh --max-workers=4
       - uses: actions/upload-artifact@v4

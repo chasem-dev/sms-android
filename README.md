@@ -61,8 +61,8 @@ decompilation submodule, and uses the checked-in Gradle wrapper to build only
 `arm64-v8a`. The installable debug APK is
 `app/build/outputs/apk/debug/app-debug.apk`.
 
-`tests/check-input-monitor.sh` runs the input monitor's unit tests without the
-Android SDK.
+`tests/check-input-monitor.sh` and `tests/check-controller-mapping.sh` run the
+input monitor's and controller mapping's unit tests without the Android SDK.
 
 ## Releases
 
@@ -270,8 +270,8 @@ assignments follow SDL's existing desktop profile and require tester checking;
 use Input test to export key/axis identities if a button or camera axis is wrong.
 
 
-Preview 18 adds **Game settings → Controller configuration**. Select a
-connected controller, tap Assign beside a GameCube control and press a button
+Preview 0.2.0-preview.2 adds **Game settings → Controller configuration**.
+Select a connected controller, tap Assign beside a GameCube control and press a button
 or move the requested stick direction. L/R accept a button or calibrated
 trigger. D-pad accepts keys, hats or an axis direction. Clear disables that
 control; unchanged rows keep their automatic layout. Save applies the selected

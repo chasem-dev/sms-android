@@ -6,6 +6,8 @@ and moves them under that preview's heading. See AGENTS.md.
 
 ## Unreleased
 
+- Game settings now has Controller configuration: assign buttons, sticks and triggers for each controller, including ones the game couldn't map automatically, then clear controls or restore defaults. Saved layouts apply the next time you press Play.
+
 ## 0.2.0-preview.1
 
 - The Android launcher now has its own version numbers, starting at 0.2.0, and is released from its own page. Install it over preview 17 to keep your disc and saves.
