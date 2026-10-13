@@ -16,8 +16,20 @@ import java.util.*;
 
 /** User-driven per-device assignments, captured before SDL sees input. */
 public class ControllerConfigActivity extends Activity implements InputManager.InputDeviceListener {
-    private static final String[] NAMES={"A · Jump","B · Dive","X","Y","Z","L","R · Spray","Start · Pause",
-        "Movement · Horizontal","Movement · Vertical","Camera · Horizontal","Camera · Vertical","D-pad · Up","D-pad · Down","D-pad · Left","D-pad · Right"};
+    // Parallel to ControllerMapping.TARGETS; a heading starts each group.
+    private static final String[] NAMES={"A · Jump","B · Dive","X","Y","Z","Start · Pause",
+        "L · Full press","L · Soft press","R · Full press (stand and aim)","R · Soft press (spray while moving)",
+        "Movement · Horizontal","Movement · Vertical","Movement · Up","Movement · Down","Movement · Left","Movement · Right",
+        "Camera · Horizontal","Camera · Vertical","Camera · Up","Camera · Down","Camera · Left","Camera · Right",
+        "D-pad · Up","D-pad · Down","D-pad · Left","D-pad · Right"};
+    private static final Map<String,String> HEADINGS=new HashMap<>();
+    static {
+        HEADINGS.put("a","Buttons");
+        HEADINGS.put("lefttrigger","Triggers · an analog trigger on Full press keeps its whole travel; Soft press is a light press without the click, for buttons");
+        HEADINGS.put("leftx","Control stick · a direction lets a button push the stick fully");
+        HEADINGS.put("rightx","C-stick");
+        HEADINGS.put("dpup","D-pad");
+    }
     private final Map<String,ControllerProfiles.Profile> drafts=new LinkedHashMap<>();
     private final Set<String> dirty=new HashSet<>();
     private final Map<Integer,Double> latest=new HashMap<>(),rest=new HashMap<>();
@@ -63,7 +75,7 @@ public class ControllerConfigActivity extends Activity implements InputManager.I
         LinearLayout top=new LinearLayout(this);top.addView(text("Controller configuration",20),new LinearLayout.LayoutParams(0,-2,1));
         save=button(top,"Save",this::save);button(top,"Done",this::done);root.addView(top);
         root.addView(text("Select a controller, then Assign a control. Release controls before assigning. Save applies your changes on the next Play.",13));
-        instruction=text("Unchanged controls keep the automatic layout. Clear disables a control.",14);root.addView(instruction);
+        instruction=text("Unchanged controls keep the automatic layout. Clear disables a control or removes an extra one.",14);root.addView(instruction);
         LinearLayout columns=new LinearLayout(this);root.addView(columns,new LinearLayout.LayoutParams(-1,0,1));
         LinearLayout devices=panel(columns,"Controller",1);selector=new Spinner(this);selector.setBackgroundColor(Color.rgb(40,60,80));devices.addView(selector);
         button(devices,"Refresh devices",this::inventory);button(devices,"Restore defaults",()->{
@@ -118,18 +130,21 @@ public class ControllerConfigActivity extends Activity implements InputManager.I
         assignments.removeAllViews();ControllerProfiles.Profile p=profile();save.setEnabled(p!=null&&pending==null);
         if(p==null){assignments.addView(text("No controller found. Connect one and press Refresh devices.",16));return;}
         for(int i=0;i<ControllerMapping.TARGETS.length;i++){
-            final String target=ControllerMapping.TARGETS[i];LinearLayout row=new LinearLayout(this);
-            String label=p.mapping.labels.get(target);if(label==null)label="Automatic";
-            TextView title=text(NAMES[i]+"\n"+label,14);row.addView(title,new LinearLayout.LayoutParams(0,-2,1));
-            Button assign=button(row,"Assign",()->arm(target));assign.setEnabled(connected()!=null);
-            button(row,"Clear",()->{p.mapping.set(target,"none","Unassigned");dirty.add(p.descriptor);cancelCapture();rows();});assignments.addView(row);
+            final String target=ControllerMapping.TARGETS[i],name=NAMES[i];LinearLayout row=new LinearLayout(this);
+            if(HEADINGS.containsKey(target)){TextView heading=text(HEADINGS.get(target),13);heading.setTextColor(Color.rgb(140,170,190));assignments.addView(heading);}
+            boolean extra=ControllerMapping.extra(target);
+            String label=p.mapping.labels.get(target);if(label==null)label=extra?"Not assigned":"Automatic";
+            TextView title=text(name+"\n"+label,14);row.addView(title,new LinearLayout.LayoutParams(0,-2,1));
+            Button assign=button(row,"Assign",()->arm(target,name));assign.setEnabled(connected()!=null);
+            // Extra controls have no automatic binding to disable, so Clear just removes theirs.
+            button(row,"Clear",()->{if(extra)p.mapping.remove(target);else p.mapping.set(target,"none","Unassigned");dirty.add(p.descriptor);cancelCapture();rows();});assignments.addView(row);
         }
     }
-    private void arm(String target){
+    private void arm(String target,String name){
         if(connected()==null)return;pending=target;rest.clear();rest.putAll(latest);restHatX=hatX;restHatY=hatY;motionPrimed=seenMotion;cancel.setVisibility(View.VISIBLE);save.setEnabled(false);
         String move=target.equals("leftx")?"Move the LEFT stick RIGHT":target.equals("lefty")?"Move the LEFT stick DOWN":
             target.equals("rightx")?"Move the RIGHT stick RIGHT":target.equals("righty")?"Move the RIGHT stick DOWN":
-            target.equals("dpup")?"Press D-pad UP":target.equals("dpdown")?"Press D-pad DOWN":target.equals("dpleft")?"Press D-pad LEFT":target.equals("dpright")?"Press D-pad RIGHT":"Press the button or trigger you want to use";
+            target.equals("dpup")?"Press D-pad UP":target.equals("dpdown")?"Press D-pad DOWN":target.equals("dpleft")?"Press D-pad LEFT":target.equals("dpright")?"Press D-pad RIGHT":"Press the button or trigger for "+name;
         instruction.setText(move+". Only input from the selected controller is captured.");
     }
     private void cancelCapture(){if(pending!=null&&instruction!=null)instruction.setText("Capture cancelled. Tap Assign to try again.");pending=null;rest.clear();if(cancel!=null)cancel.setVisibility(View.GONE);if(save!=null)save.setEnabled(profile()!=null);}
@@ -162,7 +177,7 @@ public class ControllerConfigActivity extends Activity implements InputManager.I
             if(event.getAction()==KeyEvent.ACTION_UP)heldKeys.remove(event.getKeyCode());
             showLive(KeyEvent.keyCodeToString(event.getKeyCode())+(event.getAction()==KeyEvent.ACTION_UP?" · released":" · pressed"));
             if(pending!=null&&fresh){
-                if(pending.equals("leftx")||pending.equals("lefty")||pending.equals("rightx")||pending.equals("righty"))instruction.setText("Move a stick for this control; buttons cannot replace a complete stick axis.");
+                if(ControllerMapping.stickAxis(pending))instruction.setText("Move a stick for this control. To use buttons, assign them to the Up, Down, Left and Right rows below.");
                 else{int raw=ControllerMapping.rawButton(event.getKeyCode());if(raw>=0)captured("b"+raw,KeyEvent.keyCodeToString(event.getKeyCode()));
                     else instruction.setText("This key is not exposed as a controller button. Try another button.");}
             }
@@ -187,11 +202,11 @@ public class ControllerConfigActivity extends Activity implements InputManager.I
         seenMotion=true;hatX=event.getAxisValue(MotionEvent.AXIS_HAT_X);hatY=event.getAxisValue(MotionEvent.AXIS_HAT_Y);
         if(pending!=null){
             if(!motionPrimed){rest.clear();rest.putAll(latest);restHatX=hatX;restHatY=hatY;motionPrimed=true;instruction.setText("Release controls, then repeat the requested movement.");return true;}
-            boolean stick=pending.equals("leftx")||pending.equals("lefty")||pending.equals("rightx")||pending.equals("righty");
+            boolean stick=ControllerMapping.stickAxis(pending);
             if(!stick){float hx=hatX,hy=hatY;
                 boolean x=Math.abs(hx)>0.5&&Math.abs(hx-restHatX)>0.5,y=Math.abs(hy)>0.5&&Math.abs(hy-restHatY)>0.5;
                 if(x||y){int raw=x?(hx<0?13:14):(hy<0?11:12);captured("b"+raw,"D-pad "+(raw==11?"Up":raw==12?"Down":raw==13?"Left":"Right"));return true;}}
-            if(bestIndex>=0){String expression=ControllerMapping.axisExpression(bestIndex,base,pressed,stick,pending.endsWith("trigger"));
+            if(bestIndex>=0){String expression=ControllerMapping.axisExpression(bestIndex,base,pressed,stick,ControllerMapping.trigger(pending));
                 if(expression!=null)captured(expression,MotionEvent.axisToString(ranges.get(bestIndex).getAxis())+(expression.endsWith("~")?" · inverted":""));}
             if(Math.abs(hatX)<0.3)restHatX=0;if(Math.abs(hatY)<0.3)restHatY=0;
         }return true;

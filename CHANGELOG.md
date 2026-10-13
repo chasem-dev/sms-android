@@ -6,6 +6,8 @@ and moves them under that preview's heading. See AGENTS.md.
 
 ## Unreleased
 
+- Controller configuration in Game settings now has separate Full press and Soft press rows for L and R, so controllers without analog triggers can make a light press (such as spraying while moving), plus Up, Down, Left and Right rows for both sticks so buttons can move Mario or the camera.
+
 ## 0.2.0-preview.3
 
 - No changes from 0.2.0-preview.2.

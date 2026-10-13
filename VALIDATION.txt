@@ -642,3 +642,22 @@ Android Activity compile checks APIs; full debug/release and static APK checks
 follow. No Android emulator/container runtime test is performed. Actual UI,
 controller capture/persistence, restore, hotplug, Back behavior, rumble tradeoff
 and application to gameplay still require physical validation. Preview18/code15718.
+
+
+Separate soft L/R and stick-direction controls (2026-10-12)
+-----------------------------------------------------------
+Requested for controllers without analog triggers. Controller configuration
+now lists every GameCube control in groups: L and R each have Full press and
+Soft press rows, and both sticks gain Up/Down/Left/Right rows beside their
+axes. Soft presses are bound to SDL paddle1/paddle2 in the controller's
+mapping; Play writes a private bindings file giving those to the game's
+existing L_SOFT/R_SOFT controls (default 40% travel, no click) only when a
+saved controller uses them, and passes it as SMS_BINDINGS. Stick directions
+use SDL half-axis outputs, so the stick's own axis keeps working.
+
+Java checks cover the new targets, the soft-press and stick-direction
+serialization, removal and the target helpers. The host SDL virtual-controller
+check covers parsing the new targets, rejecting unknown or duplicate ones,
+the paddle carrier's button events and button-driven stick directions next to
+the untouched stick axis. The debug APK builds. No emulator or device was run:
+the screen layout, capture and soft-press feel in game need a tester.
