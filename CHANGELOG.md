@@ -6,6 +6,8 @@ and moves them under that preview's heading. See AGENTS.md.
 
 ## Unreleased
 
+## 0.2.0-preview.5
+
 - Fixed a black screen from the title screen onward, with sound still playing, on devices where the game has to load into a different part of memory.
 
 ## 0.2.0-preview.4
