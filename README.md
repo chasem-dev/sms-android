@@ -292,6 +292,16 @@ normal driver selection on the next Play. USB permissions are unchanged.
 System Back still exits the game; a controller Back key explicitly assigned
 to a game control is forwarded as controller input instead.
 
+The screen covers every GameCube control. Under Triggers, L and R each have a
+Full press row (a button gives the full press with the click; an analog trigger
+keeps its whole travel) and a Soft press row: a light press without the click,
+as when spraying FLUDD on the move, for controllers without analog triggers.
+The Control stick and C-stick groups also have Up, Down, Left and Right rows,
+so buttons can push either stick fully in one direction while the stick's own
+axis keeps working. These extra rows start unassigned; Clear removes them.
+Soft presses travel to the game as SDL paddle buttons, which Play binds to the
+game's `L_SOFT`/`R_SOFT` controls through a private `SMS_BINDINGS` file.
+
 Host checks cover Java Android-to-SDL button/axis rules, trigger calibration,
 inversion, descriptor CRC and serialization, plus real SDL virtual-controller
 profile matching/merging, malformed/out-of-range rejection, event conversion,

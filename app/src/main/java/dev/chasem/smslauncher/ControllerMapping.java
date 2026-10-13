@@ -5,14 +5,25 @@ import java.util.Map;
 
 /** Android input to SDL mapping rules, independent of Activity/storage APIs. */
 final class ControllerMapping {
-    static final String[] TARGETS = {"a","b","x","y","rightshoulder","lefttrigger","righttrigger","start",
-        "leftx","lefty","rightx","righty","dpup","dpdown","dpleft","dpright"};
+    // paddle1/paddle2 carry soft L/R presses (see ControllerProfiles.writeGameFile);
+    // a signed stick name is one direction of that stick, pushed fully by a button.
+    static final String[] TARGETS = {"a","b","x","y","rightshoulder","start",
+        "lefttrigger","paddle1","righttrigger","paddle2",
+        "leftx","lefty","-lefty","+lefty","-leftx","+leftx",
+        "rightx","righty","-righty","+righty","-rightx","+rightx",
+        "dpup","dpdown","dpleft","dpright"};
     final Map<String,String> bindings = new LinkedHashMap<>();
     final Map<String,String> labels = new LinkedHashMap<>();
     static boolean target(String name) {
         for (String value : TARGETS) if (value.equals(name)) return true;
         return false;
     }
+    /** A whole stick axis: only a stick can be captured for it. */
+    static boolean stickAxis(String target) { return target.matches("(?:left|right)[xy]"); }
+    /** Controls the game has no automatic binding for. */
+    static boolean extra(String target) { return target.startsWith("paddle") || target.startsWith("+") || target.startsWith("-"); }
+    /** Controls that calibrate an analog trigger from its resting end. */
+    static boolean trigger(String target) { return target.endsWith("trigger") || target.startsWith("paddle"); }
     static boolean expression(String value) {
         return value != null && value.matches("none|b(?:[0-9]|[12][0-9]|3[0-5])|[+-]?a(?:[0-9]|[1-5][0-9]|6[0-3])~?");
     }
@@ -20,6 +31,8 @@ final class ControllerMapping {
         if (!target(target) || !expression(expression)) throw new IllegalArgumentException("Invalid control assignment");
         bindings.put(target,expression); labels.put(target,label);
     }
+    void remove(String target) { bindings.remove(target); labels.remove(target); }
+    boolean assigned(String target) { String value=bindings.get(target); return value!=null&&!value.equals("none"); }
     String entries() {
         StringBuilder out = new StringBuilder();
         for (String target : TARGETS) if (bindings.containsKey(target))

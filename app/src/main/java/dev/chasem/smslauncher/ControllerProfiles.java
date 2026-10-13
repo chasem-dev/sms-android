@@ -65,11 +65,20 @@ final class ControllerProfiles {
     }
     static void writeGameFile(Context context) throws java.io.IOException {
         StringBuilder out=new StringBuilder();
-        for (Profile p : saved(context)) if (!p.mapping.bindings.isEmpty())
+        boolean softL=false,softR=false;
+        for (Profile p : saved(context)) if (!p.mapping.bindings.isEmpty()) {
             out.append(String.format(Locale.ROOT,"%04x:%04x:%04x\t",p.vendor,p.product,ControllerMapping.descriptorCrc(p.descriptor)))
                 .append(p.mapping.entries()).append('\n');
-        File file=new File(context.getFilesDir(),"controller-mappings.txt"),temp=new File(context.getFilesDir(),"controller-mappings.tmp");
-        Files.write(temp.toPath(),out.toString().getBytes(StandardCharsets.UTF_8));
+            softL|=p.mapping.assigned("paddle1"); softR|=p.mapping.assigned("paddle2");
+        }
+        write(context,"controller-mappings",out.toString());
+        // The game's pad layer reads soft presses from these controller buttons
+        // only while a controller is configured to send them.
+        write(context,"controller-bindings",(softL?"L_SOFT = PAD_PADDLE1\n":"")+(softR?"R_SOFT = PAD_PADDLE2\n":""));
+    }
+    private static void write(Context context,String name,String text) throws java.io.IOException {
+        File file=new File(context.getFilesDir(),name+".txt"),temp=new File(context.getFilesDir(),name+".tmp");
+        Files.write(temp.toPath(),text.getBytes(StandardCharsets.UTF_8));
         Files.move(temp.toPath(),file.toPath(),StandardCopyOption.REPLACE_EXISTING,StandardCopyOption.ATOMIC_MOVE);
     }
 }

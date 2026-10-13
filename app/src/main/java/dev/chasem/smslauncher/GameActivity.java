@@ -69,6 +69,7 @@ public class GameActivity extends SDLActivity {
         args.add("--env"); args.add("SMS_SAVE_DIR=" + new File(getFilesDir(), "saves/card-a").getAbsolutePath());
         args.add("--env"); args.add("SMS_SETTINGS=" + new File(data, "settings.txt").getAbsolutePath());
         args.add("--env"); args.add("SMS_ANDROID_CONTROLLER_MAPPINGS=" + new File(getFilesDir(), "controller-mappings.txt").getAbsolutePath());
+        args.add("--env"); args.add("SMS_BINDINGS=" + new File(getFilesDir(), "controller-bindings.txt").getAbsolutePath());
         PowerManager power = getSystemService(PowerManager.class);
         Display display = getWindow().getDecorView().getDisplay();
         args.add("--env"); args.add("SMS_ANDROID_STARTUP_POLICY=" + gamePolicy
