@@ -16,6 +16,17 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
+      - name: Install compiler cache
+        uses: Mozilla-Actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+        with:
+          version: v0.18.0
+      # The port's CMake runs each C/C++ compile through SMS_COMPILER_CACHE,
+      # so only changed sources recompile. The cache lives in GitHub's cache.
+      - name: Enable compiler cache
+        run: |
+          echo "SMS_COMPILER_CACHE=$(command -v sccache)" >> "$GITHUB_ENV"
+          echo "SCCACHE_GHA_ENABLED=on" >> "$GITHUB_ENV"
+          echo "SCCACHE_IGNORE_SERVER_IO_ERROR=1" >> "$GITHUB_ENV"
       - name: Install Android SDK packages
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
@@ -27,6 +38,9 @@ jobs:
         run: bash tests/check-controller-mapping.sh
       - name: Build debug APK
         run: ./build.sh --max-workers=4
+      - name: Compiler cache statistics
+        if: always()
+        run: sccache --show-stats
       - uses: actions/upload-artifact@v4
         with:
           name: sms-android-debug-apk
