@@ -6,6 +6,9 @@ and moves them under that preview's heading. See AGENTS.md.
 
 ## Unreleased
 
+## 0.2.0-preview.3
+
+
 ## 0.2.0-preview.2
 
 - Game settings now has Controller configuration: assign buttons, sticks and triggers for each controller, including ones the game couldn't map automatically, then clear controls or restore defaults. Saved layouts apply the next time you press Play.
