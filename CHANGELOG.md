@@ -8,6 +8,7 @@ and moves them under that preview's heading. See AGENTS.md.
 
 ## 0.2.0-preview.3
 
+- No changes from 0.2.0-preview.2.
 
 ## 0.2.0-preview.2
 

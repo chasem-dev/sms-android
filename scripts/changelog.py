@@ -23,7 +23,10 @@ def split(text):
 def main(args):
     head, unreleased, rest = split(PATH.read_text())
     if args == ['notes']:
-        print('\n'.join(unreleased))
+        # Print nothing at all when Unreleased is empty: the release workflow
+        # treats any output as notes to publish.
+        if unreleased:
+            print('\n'.join(unreleased))
     elif len(args) == 3 and args[0] == 'release':
         released = [l for l in pathlib.Path(args[2]).read_text().splitlines() if l.strip()]
         # Lines merged while the release was building stay Unreleased.
