@@ -6,6 +6,8 @@ and moves them under that preview's heading. See AGENTS.md.
 
 ## Unreleased
 
+## 0.2.0-preview.7
+
 - Use performance CPU cores in Game settings is now on by default, which keeps the game on the phone's fastest cores for smoother play; if you changed it before, your choice is kept.
 - The map's opening and closing wipe no longer stutters, and the map screen now fills the widescreen frame.
 - The circle wipes, such as going from the file select into Delfino Plaza, are now solid black at higher resolution scales instead of grey stripes, on phones whose graphics driver supports it.
