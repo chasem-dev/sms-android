@@ -6,6 +6,8 @@ and moves them under that preview's heading. See AGENTS.md.
 
 ## Unreleased
 
+- Use performance CPU cores in Game settings is now on by default, which keeps the game on the phone's fastest cores for smoother play; if you changed it before, your choice is kept.
+
 ## 0.2.0-preview.6
 
 - Fixed the game slowing to about 1 FPS for as long as Mario is electrocuted, for example by an Electrokoopa in Pinna Park.

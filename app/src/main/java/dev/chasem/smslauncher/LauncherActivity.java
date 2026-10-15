@@ -81,7 +81,7 @@ public class LauncherActivity extends Activity {
         toggle("Invert camera left/right", "camera_invert_x", false);
         toggle("Invert camera up/down", "camera_invert_y", false);
         toggle("Android performance hints", "performance_hints", true);
-        toggle("Use performance CPU cores", "performance_cores", false);
+        toggle("Use performance CPU cores", "performance_cores", true);
         toggle("Request performance headroom", "performance_headroom", false);
         toggle("Match display refresh to game FPS", "match_display_rate", false);
         toggle("Show performance overlay", "performance_overlay", false);
@@ -149,7 +149,7 @@ public class LauncherActivity extends Activity {
             + "camera_invert_x=" + (prefs.getBoolean("camera_invert_x", false) ? "1" : "0")
             + "\ncamera_invert_y=" + (prefs.getBoolean("camera_invert_y", false) ? "1" : "0") + "\n"
             + "SMS_ANDROID_PERFORMANCE_HINTS=" + (prefs.getBoolean("performance_hints", true) ? "1" : "0")
-            + "\nSMS_ANDROID_PERFORMANCE_CORES=" + (prefs.getBoolean("performance_cores", false) ? "1" : "0")
+            + "\nSMS_ANDROID_PERFORMANCE_CORES=" + (prefs.getBoolean("performance_cores", true) ? "1" : "0")
             + "\nSMS_ANDROID_PERFORMANCE_HEADROOM=" + (prefs.getBoolean("performance_headroom", false) ? "1" : "0")
             + "\nSMS_TIMING_LOG=" + (prefs.getBoolean("timing_log", false) ? "1" : "0")
             + "\nSMS_OVERLAY=" + (prefs.getBoolean("performance_overlay", false) ? "1" : "0") + "\n";
