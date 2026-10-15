@@ -27,7 +27,7 @@ public class ControllerConfigActivity extends Activity implements InputManager.I
         HEADINGS.put("a","Buttons");
         HEADINGS.put("lefttrigger","Triggers · an analog trigger on Full press keeps its whole travel; Soft press is a light press without the click, for buttons");
         HEADINGS.put("leftx","Control stick · a direction lets a button push the stick fully");
-        HEADINGS.put("rightx","C-stick");
+        HEADINGS.put("rightx","C-stick · Invert flips an assigned stick; Game settings can also invert the camera");
         HEADINGS.put("dpup","D-pad");
     }
     private final Map<String,ControllerProfiles.Profile> drafts=new LinkedHashMap<>();
@@ -136,14 +136,18 @@ public class ControllerConfigActivity extends Activity implements InputManager.I
             String label=p.mapping.labels.get(target);if(label==null)label=extra?"Not assigned":"Automatic";
             TextView title=text(name+"\n"+label,14);row.addView(title,new LinearLayout.LayoutParams(0,-2,1));
             Button assign=button(row,"Assign",()->arm(target,name));assign.setEnabled(connected()!=null);
+            if(ControllerMapping.stickAxis(target))button(row,"Invert",()->{p.mapping.invert(target);dirty.add(p.descriptor);cancelCapture();rows();
+                instruction.setText(name+" is now "+p.mapping.labels.get(target)+". Press Save when finished.");}).setEnabled(p.mapping.invertible(target));
             // Extra controls have no automatic binding to disable, so Clear just removes theirs.
             button(row,"Clear",()->{if(extra)p.mapping.remove(target);else p.mapping.set(target,"none","Unassigned");dirty.add(p.descriptor);cancelCapture();rows();});assignments.addView(row);
         }
     }
     private void arm(String target,String name){
         if(connected()==null)return;pending=target;rest.clear();rest.putAll(latest);restHatX=hatX;restHatY=hatY;motionPrimed=seenMotion;cancel.setVisibility(View.VISIBLE);save.setEnabled(false);
-        String move=target.equals("leftx")?"Move the LEFT stick RIGHT":target.equals("lefty")?"Move the LEFT stick DOWN":
-            target.equals("rightx")?"Move the RIGHT stick RIGHT":target.equals("righty")?"Move the RIGHT stick DOWN":
+        String move=target.equals("leftx")?"Move the LEFT stick the way that should count as RIGHT (the other way inverts it)":
+            target.equals("lefty")?"Move the LEFT stick the way that should count as DOWN (the other way inverts it)":
+            target.equals("rightx")?"Move the RIGHT stick the way that should count as RIGHT (the other way inverts it)":
+            target.equals("righty")?"Move the RIGHT stick the way that should count as DOWN (the other way inverts it)":
             target.equals("dpup")?"Press D-pad UP":target.equals("dpdown")?"Press D-pad DOWN":target.equals("dpleft")?"Press D-pad LEFT":target.equals("dpright")?"Press D-pad RIGHT":"Press the button or trigger for "+name;
         instruction.setText(move+". Only input from the selected controller is captured.");
     }
@@ -207,7 +211,7 @@ public class ControllerConfigActivity extends Activity implements InputManager.I
                 boolean x=Math.abs(hx)>0.5&&Math.abs(hx-restHatX)>0.5,y=Math.abs(hy)>0.5&&Math.abs(hy-restHatY)>0.5;
                 if(x||y){int raw=x?(hx<0?13:14):(hy<0?11:12);captured("b"+raw,"D-pad "+(raw==11?"Up":raw==12?"Down":raw==13?"Left":"Right"));return true;}}
             if(bestIndex>=0){String expression=ControllerMapping.axisExpression(bestIndex,base,pressed,stick,ControllerMapping.trigger(pending));
-                if(expression!=null)captured(expression,MotionEvent.axisToString(ranges.get(bestIndex).getAxis())+(expression.endsWith("~")?" · inverted":""));}
+                if(expression!=null)captured(expression,MotionEvent.axisToString(ranges.get(bestIndex).getAxis())+(expression.endsWith("~")?ControllerMapping.INVERTED:""));}
             if(Math.abs(hatX)<0.3)restHatX=0;if(Math.abs(hatY)<0.3)restHatY=0;
         }return true;
     }

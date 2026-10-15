@@ -78,6 +78,8 @@ public class LauncherActivity extends Activity {
         choice("Resolution scale", "resolution", new String[]{"1", "2", "3"}, "1");
         choice("Aspect ratio", "widescreen", new String[]{"off", "16:9"}, "16:9");
         choice("Volume", "volume", new String[]{"0", "25", "50", "75", "100"}, "100");
+        toggle("Invert camera left/right", "camera_invert_x", false);
+        toggle("Invert camera up/down", "camera_invert_y", false);
         toggle("Android performance hints", "performance_hints", true);
         toggle("Use performance CPU cores", "performance_cores", false);
         toggle("Request performance headroom", "performance_headroom", false);
@@ -144,6 +146,8 @@ public class LauncherActivity extends Activity {
         String text = "frame_rate=" + prefs.getString("frame_rate", "60") + "\nresolution=" + prefs.getString("resolution", "1")
             + "\nwidescreen=" + prefs.getString("widescreen", "16:9") + "\nvolume=" + prefs.getString("volume", "100")
             + "\nmsaa=0\nfullscreen=on\nvsync=on\nbutton_prompts=auto\n"
+            + "camera_invert_x=" + (prefs.getBoolean("camera_invert_x", false) ? "1" : "0")
+            + "\ncamera_invert_y=" + (prefs.getBoolean("camera_invert_y", false) ? "1" : "0") + "\n"
             + "SMS_ANDROID_PERFORMANCE_HINTS=" + (prefs.getBoolean("performance_hints", true) ? "1" : "0")
             + "\nSMS_ANDROID_PERFORMANCE_CORES=" + (prefs.getBoolean("performance_cores", false) ? "1" : "0")
             + "\nSMS_ANDROID_PERFORMANCE_HEADROOM=" + (prefs.getBoolean("performance_headroom", false) ? "1" : "0")

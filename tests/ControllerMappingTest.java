@@ -40,6 +40,13 @@ final class ControllerMappingTest {
         check(ControllerMapping.trigger("paddle1")&&ControllerMapping.trigger("righttrigger")&&!ControllerMapping.trigger("rightshoulder"));
         for(String target:new String[]{"paddle3","+a","leftx+","+dpup"})check(!ControllerMapping.target(target));
         boolean failed=false;try{map.set("crc","b0","bad");}catch(IllegalArgumentException e){failed=true;}check(failed);
-        System.out.println("PASS controller configuration: Android button ABI, SDL axis order, inversion, trigger calibration, descriptor identity, soft L/R and stick-direction targets, and bounded mapping serialization");
+        check(map.invertible("rightx")&&!map.invertible("a")&&!map.invertible("leftx"));
+        map.invert("rightx");check(map.bindings.get("rightx").equals("a2")&&map.labels.get("rightx").equals("AXIS_Z"));
+        map.invert("rightx");check(map.bindings.get("rightx").equals("a2~")&&map.labels.get("rightx").equals("AXIS_Z · inverted"));
+        map.set("lefty","a1","AXIS_Y");map.invert("lefty");check(map.entries().contains("lefty:a1~,")&&map.labels.get("lefty").equals("AXIS_Y · inverted"));
+        map.set("leftx","none","Unassigned");map.set("-leftx","-a0","AXIS_X");
+        check(!map.invertible("leftx")&&!map.invertible("-leftx"));
+        for(String target:new String[]{"leftx","-leftx","a","righty"}){failed=false;try{map.invert(target);}catch(IllegalArgumentException e){failed=true;}check(failed);}
+        System.out.println("PASS controller configuration: Android button ABI, SDL axis order, inversion, trigger calibration, descriptor identity, soft L/R and stick-direction targets, stick inversion, and bounded mapping serialization");
     }
 }

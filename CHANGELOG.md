@@ -6,6 +6,10 @@ and moves them under that preview's heading. See AGENTS.md.
 
 ## Unreleased
 
+- Game settings now has Invert camera left/right and Invert camera up/down options, for when the camera turns the opposite way to how you push the stick.
+- Fixed Controller configuration ignoring a stick direction given to the Up, Down, Left and Right rows, so swapping the camera stick's Left and Right there now turns the camera the way you assigned.
+- Controller configuration in Game settings now has an Invert button on each stick's Horizontal and Vertical rows once a stick is assigned, and assigning one says that moving the stick the other way inverts it.
+
 ## 0.2.0-preview.5
 
 - Fixed a black screen from the title screen onward, with sound still playing, on devices where the game has to load into a different part of memory.
