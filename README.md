@@ -124,9 +124,11 @@ Connect a USB/Bluetooth controller or use the handheld's built-in gamepad.
 CPU scheduling to the frame workload. It does not force clock speeds or
 bypass thermal limits. Toggle it off to compare the same scene and settings,
 then back on: saved choices carry over between updates, so a comparison left
-off stays off. If the performance log shows the CPU clock staying low while
-frames run late, check it is on before trying anything else.
-**Use performance CPU cores** defaults off. Enable it to restrict the game's
+off stays off. On a Snapdragon 8 Gen 3 phone, 0.2.0-preview.6 holds 60 FPS with
+hints on or off; low clocks there came from the game stalling mid-frame on
+the GPU, which Android read as idle time.
+**Use performance CPU cores** defaults on (from 0.2.0-preview.7; players who
+changed it keep their choice). It restricts the game's
 frame-producing thread and optional renderer worker to a detected group of
 big/prime cores. It uses the current thread's allowed CPU mask, prefers
 complete scheduler-capacity metadata, and falls back to complete maximum
@@ -136,7 +138,9 @@ multi-core tier cannot be identified. Android still controls clock speeds
 and thermal policy. This works independently of ADPF: compare it on/off
 with performance hints, headroom and display matching off, restarting Play
 between runs. Game logs report requested/effective core masks or the reason
-for falling back. This candidate has not been runtime-tested on Android.
+for falling back. Testers found it smoother on older builds, and on
+0.2.0-preview.6 still a little smoother than without it, so it is now the
+default; switch it off to save battery or to compare.
 **Request performance headroom** defaults off and asks ADPF to finish frame
 work within 80% of the frame interval (about 13.35 ms at nominal 60 FPS),
 leaving a margin for presentation and scheduling variation. It changes the

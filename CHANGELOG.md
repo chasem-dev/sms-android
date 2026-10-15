@@ -6,6 +6,16 @@ and moves them under that preview's heading. See AGENTS.md.
 
 ## Unreleased
 
+- Use performance CPU cores in Game settings is now on by default, which keeps the game on the phone's fastest cores for smoother play; if you changed it before, your choice is kept.
+- The map's opening and closing wipe no longer stutters, and the map screen now fills the widescreen frame.
+- The circle wipes, such as going from the file select into Delfino Plaza, are now solid black at higher resolution scales instead of grey stripes, on phones whose graphics driver supports it.
+- The camera-in-wall screen and the HUD's sparkles at the screen edges now line up with the widescreen frame.
+- Pressing L1 and R1 together saves a state, and the pause menu lists your states to load; on Android a state brings back the level, your progress and Mario's position rather than the exact moment.
+- Dune Buds and other sounds made from simple tones are no longer silent.
+- At 60 FPS, Blooper punches now hurt Mario, birds fly at their normal speed and the GO! letters keep their size, and the GO! sparkles no longer come back after a pause.
+- Fixed crashes when the Phantamanta first splits in Sirena Beach and when Fire Petey breathes fire with too many effects on screen.
+- The placeholder cubes in Bianco Hills' Dirty Lake secret course are hidden, and a secret course's music now starts while the last stage's song fades out.
+
 ## 0.2.0-preview.6
 
 - Fixed the game slowing to about 1 FPS for as long as Mario is electrocuted, for example by an Electrokoopa in Pinna Park.
