@@ -32,6 +32,20 @@ final class ControllerMapping {
         bindings.put(target,expression); labels.put(target,label);
     }
     void remove(String target) { bindings.remove(target); labels.remove(target); }
+    /** Marks a stick captured the opposite way to the prompt. */
+    static final String INVERTED=" · inverted";
+    /** A whole stick row assigned to a whole stick axis, which can be flipped. */
+    boolean invertible(String target) {
+        String value=bindings.get(target);
+        return stickAxis(target)&&value!=null&&value.matches("a[0-9]+~?");
+    }
+    /** Flips which way of the assigned stick counts as right (or down). */
+    void invert(String target) {
+        if (!invertible(target)) throw new IllegalArgumentException("Only an assigned stick can be inverted");
+        String value=bindings.get(target),label=labels.get(target);if(label==null)label="";
+        boolean inverted=value.endsWith("~");if(label.endsWith(INVERTED))label=label.substring(0,label.length()-INVERTED.length());
+        set(target,inverted?value.substring(0,value.length()-1):value+"~",inverted?label:label+INVERTED);
+    }
     boolean assigned(String target) { String value=bindings.get(target); return value!=null&&!value.equals("none"); }
     String entries() {
         StringBuilder out = new StringBuilder();
