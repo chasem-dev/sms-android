@@ -124,7 +124,7 @@ Connect a USB/Bluetooth controller or use the handheld's built-in gamepad.
 CPU scheduling to the frame workload. It does not force clock speeds or
 bypass thermal limits. Toggle it off to compare the same scene and settings,
 then back on: saved choices carry over between updates, so a comparison left
-off stays off. On the Galaxy S24 Ultra, 0.2.0-preview.6 holds 60 FPS with
+off stays off. On a Snapdragon 8 Gen 3 phone, 0.2.0-preview.6 holds 60 FPS with
 hints on or off; low clocks there came from the game stalling mid-frame on
 the GPU, which Android read as idle time.
 **Use performance CPU cores** defaults off. Enable it to restrict the game's
