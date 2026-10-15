@@ -6,6 +6,8 @@ and moves them under that preview's heading. See AGENTS.md.
 
 ## Unreleased
 
+## 0.2.0-preview.6
+
 - Fixed the game slowing to about 1 FPS for as long as Mario is electrocuted, for example by an Electrokoopa in Pinna Park.
 - Looking toward the sun no longer drops the game below 60 FPS, and every frame takes a little less time.
 - The performance log now also records draws, texture uploads and waits for the graphics chip, to help track down slow scenes.
