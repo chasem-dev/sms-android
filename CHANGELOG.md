@@ -6,6 +6,9 @@ and moves them under that preview's heading. See AGENTS.md.
 
 ## Unreleased
 
+- Fixed the game slowing to about 1 FPS for as long as Mario is electrocuted, for example by an Electrokoopa in Pinna Park.
+- Looking toward the sun no longer drops the game below 60 FPS, and every frame takes a little less time.
+- The performance log now also records draws, texture uploads and waits for the graphics chip, to help track down slow scenes.
 - Game settings now has Invert camera left/right and Invert camera up/down options, for when the camera turns the opposite way to how you push the stick.
 - Fixed Controller configuration ignoring a stick direction given to the Up, Down, Left and Right rows, so swapping the camera stick's Left and Right there now turns the camera the way you assigned.
 - Controller configuration in Game settings now has an Invert button on each stick's Horizontal and Vertical rows once a stick is assigned, and assigning one says that moving the stick the other way inverts it.

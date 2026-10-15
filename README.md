@@ -122,7 +122,10 @@ Choose frame rate, resolution scale, aspect ratio and volume, then **Play**.
 Connect a USB/Bluetooth controller or use the handheld's built-in gamepad.
 **Android performance hints** defaults on and lets supported devices adjust
 CPU scheduling to the frame workload. It does not force clock speeds or
-bypass thermal limits. Toggle it off to compare the same scene and settings.
+bypass thermal limits. Toggle it off to compare the same scene and settings,
+then back on: saved choices carry over between updates, so a comparison left
+off stays off. If the performance log shows the CPU clock staying low while
+frames run late, check it is on before trying anything else.
 **Use performance CPU cores** defaults off. Enable it to restrict the game's
 frame-producing thread and optional renderer worker to a detected group of
 big/prime cores. It uses the current thread's allowed CPU mask, prefers
