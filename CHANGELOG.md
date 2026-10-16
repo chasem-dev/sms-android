@@ -6,6 +6,9 @@ and moves them under that preview's heading. See AGENTS.md.
 
 ## Unreleased
 
+- Resolution scale in Game settings is now called Picture sharpness and goes up to Sharpest (4×); Original (1×) is still the default.
+- Game settings has an HD textures switch, off by default, with a Download HD textures button that installs the UHD texture pack and its extras inside the app (about 1 GB to download, 3.1 GB installed); a stopped download carries on where it left off, and Remove HD textures deletes them again.
+
 ## 0.2.0-preview.7
 
 - Use performance CPU cores in Game settings is now on by default, which keeps the game on the phone's fastest cores for smoother play; if you changed it before, your choice is kept.

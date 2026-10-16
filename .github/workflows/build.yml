@@ -36,6 +36,8 @@ jobs:
         run: bash tests/check-input-monitor.sh
       - name: Controller mapping tests
         run: bash tests/check-controller-mapping.sh
+      - name: Texture pack layout tests
+        run: bash tests/check-texture-pack.sh
       - name: Build debug APK
         run: ./build.sh --max-workers=4
       - name: Compiler cache statistics

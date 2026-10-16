@@ -24,6 +24,11 @@ public class LauncherActivity extends Activity {
     private boolean busy;
     private SharedPreferences prefs;
     private File root, disc, card, game;
+    private TexturePack textures;
+    private CheckBox hdToggle;
+    private TextView hdInfo;
+    private Button hdButton;
+    private boolean hdWorking;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -31,6 +36,7 @@ public class LauncherActivity extends Activity {
         card = new File(root, "saves/card-a"); game = new File(root, "game");
         disc.getParentFile().mkdirs(); card.mkdirs(); game.mkdirs(); new File(game, "cache").mkdirs();
         prefs = getSharedPreferences("settings", MODE_PRIVATE);
+        textures = new TexturePack(game);
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setBackgroundColor(Color.rgb(12, 26, 42));
@@ -56,6 +62,10 @@ public class LauncherActivity extends Activity {
         status = label("", 16);
         button("Play", () -> {
             if (!disc.isFile()) { message("Import a disc image first."); return; }
+            if (prefs.getBoolean("hd_textures", false) && !textures.installed()) {
+                message("HD textures are on but not downloaded. Download them in Game settings, or turn them off.");
+                return;
+            }
             try {
                 writeSettings();
                 Intent launch = new Intent(this, GameActivity.class);
@@ -75,7 +85,13 @@ public class LauncherActivity extends Activity {
         content = panel(columns, "Game settings");
         button("Controller configuration", () -> startActivity(new Intent(this, ControllerConfigActivity.class)));
         choice("Frame rate", "frame_rate", new String[]{"30", "60"}, "60");
-        choice("Resolution scale", "resolution", new String[]{"1", "2", "3"}, "1");
+        choice("Picture sharpness", "resolution", new String[]{"1", "2", "3", "4"},
+            new String[]{"Original (1×)", "Sharper (2×)", "Very sharp (3×)", "Sharpest (4×)"}, "1");
+        label("Sharper settings render the game at a higher resolution and need more of the graphics chip.", 13);
+        hdToggle = toggle("HD textures", "hd_textures", false);
+        hdInfo = label("", 13);
+        hdButton = new Button(this); hdButton.setAllCaps(false); content.addView(hdButton);
+        hdButton.setOnClickListener(v -> hdAction());
         choice("Aspect ratio", "widescreen", new String[]{"off", "16:9"}, "16:9");
         choice("Volume", "volume", new String[]{"0", "25", "50", "75", "100"}, "100");
         toggle("Invert camera left/right", "camera_invert_x", false);
@@ -122,10 +138,11 @@ public class LauncherActivity extends Activity {
         Button b = new Button(this); b.setText(text); b.setAllCaps(false);
         b.setOnClickListener(v -> { if (!busy) action.run(); }); content.addView(b);
     }
-    private void choice(String title, String key, String[] values, String fallback) {
+    private void choice(String title, String key, String[] values, String fallback) { choice(title, key, values, values, fallback); }
+    private void choice(String title, String key, String[] values, String[] labels, String fallback) {
         label(title, 16);
         Spinner s = new Spinner(this);
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, values);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, labels);
         s.setBackgroundColor(Color.rgb(40, 60, 80)); s.setAdapter(adapter);
         String value = prefs.getString(key, fallback);
         for (int i = 0; i < values.length; i++) if (values[i].equals(value)) s.setSelection(i);
@@ -134,18 +151,23 @@ public class LauncherActivity extends Activity {
             public void onNothingSelected(AdapterView<?> p) {}
         }); content.addView(s);
     }
-    private void toggle(String title, String key, boolean fallback) {
+    private CheckBox toggle(String title, String key, boolean fallback) {
         CheckBox box = new CheckBox(this);
         box.setText(title); box.setTextColor(Color.WHITE);
         box.setChecked(prefs.getBoolean(key, fallback));
         box.setOnCheckedChangeListener((view, checked) -> prefs.edit().putBoolean(key, checked).apply());
         content.addView(box);
+        return box;
     }
     private void writeSettings() throws IOException {
         ControllerProfiles.writeGameFile(this);
         String text = "frame_rate=" + prefs.getString("frame_rate", "60") + "\nresolution=" + prefs.getString("resolution", "1")
             + "\nwidescreen=" + prefs.getString("widescreen", "16:9") + "\nvolume=" + prefs.getString("volume", "100")
             + "\nmsaa=0\nfullscreen=on\nvsync=on\nbutton_prompts=auto\n"
+            // Phone GPUs mostly take no BC7, so the pack is decoded to RGBA:
+            // images up to 1024 keep Delfino Plaza's near 560 MiB (2048: 1.1 GiB).
+            + "texture_packs=" + (prefs.getBoolean("hd_textures", false)
+                ? "on\ntexture_pack_max_size=1024\ntexture_pack_mb=1024" : "off") + "\n"
             + "camera_invert_x=" + (prefs.getBoolean("camera_invert_x", false) ? "1" : "0")
             + "\ncamera_invert_y=" + (prefs.getBoolean("camera_invert_y", false) ? "1" : "0") + "\n"
             + "SMS_ANDROID_PERFORMANCE_HINTS=" + (prefs.getBoolean("performance_hints", true) ? "1" : "0")
@@ -155,7 +177,51 @@ public class LauncherActivity extends Activity {
             + "\nSMS_OVERLAY=" + (prefs.getBoolean("performance_overlay", false) ? "1" : "0") + "\n";
         try (FileOutputStream out = new FileOutputStream(new File(game, "settings.txt"))) { out.write(text.getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
     }
-    private void refresh() { message(disc.isFile() ? "Disc ready · " + (disc.length() / 1048576) + " MB" : "No disc imported yet."); }
+    private void refresh() {
+        message(disc.isFile() ? "Disc ready · " + (disc.length() / 1048576) + " MB" : "No disc imported yet.");
+        refreshTextures();
+    }
+    private void refreshTextures() {
+        if (hdWorking) return;
+        long partial = textures.partialBytes();
+        if (textures.installed()) {
+            hdInfo.setText("Downloaded · " + TexturePack.mb(textures.installedBytes()) + " MB. They look best with a sharper picture, and take longer to load.");
+            hdButton.setText("Remove HD textures");
+        } else {
+            hdInfo.setText(partial > 0
+                ? "Partly downloaded · " + TexturePack.mb(partial) + " MB. Download again to continue."
+                : "The Super Mario Sunshine UHD Texture Pack and the port's extras. About "
+                    + TexturePack.mb(TexturePack.DOWNLOAD_BYTES) + " MB to download; allow "
+                    + (TexturePack.FREE_BYTES_NEEDED + (1L << 30) - 1) / (1L << 30) + " GB of free space.");
+            hdButton.setText(partial > 0 ? "Continue HD texture download" : "Download HD textures");
+        }
+    }
+    private void hdAction() {
+        if (hdWorking) { textures.stop(); hdButton.setText("Stopping…"); return; }
+        if (busy) return;
+        boolean remove = textures.installed();
+        busy = hdWorking = true;
+        hdButton.setText(remove ? "Removing…" : "Stop");
+        getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        hdInfo.setText(remove ? "Removing HD textures…" : "Starting the download… Keep the launcher open.");
+        io.execute(() -> {
+            String failure = null;
+            try {
+                if (remove) textures.remove();
+                else textures.install(text -> runOnUiThread(() -> hdInfo.setText(text)));
+            } catch (Exception e) { failure = e.getMessage() == null ? "HD textures could not be set up." : e.getMessage(); }
+            final String error = failure;
+            runOnUiThread(() -> {
+                busy = hdWorking = false;
+                getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                if (remove) hdToggle.setChecked(false);
+                else if (textures.installed()) hdToggle.setChecked(true);
+                refreshTextures();
+                if (error != null) hdInfo.setText(error + "\n" + hdInfo.getText());
+                message(error != null ? error : remove ? "HD textures removed." : "HD textures are ready.");
+            });
+        });
+    }
     private void message(String s) { status.setText(s == null ? "Operation failed." : s); }
     private void pick(int request) {
         Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*");
