@@ -61,8 +61,9 @@ decompilation submodule, and uses the checked-in Gradle wrapper to build only
 `arm64-v8a`. The installable debug APK is
 `app/build/outputs/apk/debug/app-debug.apk`.
 
-`tests/check-input-monitor.sh` and `tests/check-controller-mapping.sh` run the
-input monitor's and controller mapping's unit tests without the Android SDK.
+`tests/check-input-monitor.sh`, `tests/check-controller-mapping.sh` and
+`tests/check-texture-pack.sh` run the input monitor's, controller mapping's and
+texture pack installer's unit tests without the Android SDK.
 
 ## Releases
 
@@ -118,7 +119,25 @@ uninstalling; uninstalling also removes the imported disc.
 Install the APK, open the landscape SMS Launcher, and choose **Import disc image**. Pick a
 US revision 0 Sunshine ISO or GCM using Android's document picker. Import
 copies it into private app storage; allow enough free space for that copy.
-Choose frame rate, resolution scale, aspect ratio and volume, then **Play**.
+Choose frame rate, picture sharpness, aspect ratio and volume, then **Play**.
+**Picture sharpness** is the internal resolution: Original (1×, the
+GameCube's 640×528, the default), Sharper (2×), Very sharp (3×) or
+Sharpest (4×). Higher settings need more of the graphics chip.
+**HD textures** defaults off. **Download HD textures** fetches the
+[Super Mario Sunshine UHD Texture Pack](https://github.com/qashto/Super_Mario_Sunshine_UHD_Texture_Pack)
+v2.1.1 (about 941 MB, from its authors' release page) and the port's
+[HD texture extras](https://github.com/chasem-dev/sms-hd-texture-extras)
+(about 61 MB), the releases the game's `tools/mods/get.py` pins. Each
+download is checked against its MD5 and unpacked into private app storage
+(about 3.1 GB installed; allow 5 GB free during setup, since the archive is
+kept until it is unpacked). A stopped or dropped download continues where it
+left off. The switch turns on once both are installed, and **Remove HD
+textures** deletes them. Most phone GPUs cannot sample the pack's BC7 images,
+so the game decodes them to RGBA, four times their size. The launcher halves
+images over 1024 texels and caps texture memory at 1 GiB. In the emulator,
+Delfino Plaza then needs about 560 MiB of texture memory, against 1.1 GiB
+with a 2048 limit. Loading screens take longer while the pack's images are
+decoded.
 Connect a USB/Bluetooth controller or use the handheld's built-in gamepad.
 **Android performance hints** defaults on and lets supported devices adjust
 CPU scheduling to the frame workload. It does not force clock speeds or
@@ -209,8 +228,8 @@ The import does not support Dolphin `.gci` or whole memory card images.
 
 **Export game log** uses the document picker to save diagnostic output.
 Disc and save import need no broad storage permission, and gameplay is
-offline. This Android launcher currently supplies the base game; the desktop
-launcher remains the path for Eclipse and HD texture pack setup.
+offline. The Android launcher supplies the base game and the optional HD textures; the
+desktop launcher remains the path for Eclipse.
 
 ## Emulator validation
 
