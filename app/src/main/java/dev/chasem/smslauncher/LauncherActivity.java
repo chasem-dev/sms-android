@@ -164,8 +164,9 @@ public class LauncherActivity extends Activity {
         String text = "frame_rate=" + prefs.getString("frame_rate", "60") + "\nresolution=" + prefs.getString("resolution", "1")
             + "\nwidescreen=" + prefs.getString("widescreen", "16:9") + "\nvolume=" + prefs.getString("volume", "100")
             + "\nmsaa=0\nfullscreen=on\nvsync=on\nbutton_prompts=auto\n"
-            // Phone GPUs mostly take no BC7, so the pack is decoded to RGBA:
-            // images up to 1024 keep Delfino Plaza's near 560 MiB (2048: 1.1 GiB).
+            // A GPU without BC7 gets the pack decoded to RGBA; images held so
+            // are halved past 1024x1024 texels, keeping Delfino Plaza near 560
+            // MiB (1.1 GiB at 2048). Blocks the GPU takes stay whole.
             + "texture_packs=" + (prefs.getBoolean("hd_textures", false)
                 ? "on\ntexture_pack_max_size=1024\ntexture_pack_mb=1024" : "off") + "\n"
             + "camera_invert_x=" + (prefs.getBoolean("camera_invert_x", false) ? "1" : "0")
