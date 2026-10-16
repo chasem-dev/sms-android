@@ -6,6 +6,8 @@ and moves them under that preview's heading. See AGENTS.md.
 
 ## Unreleased
 
+- HD textures now show at full detail, as on a PC, on phones whose graphics chip reads the pack directly (such as the Snapdragon 8 Gen 3); before, the largest ones were shown at lower detail, and wide ones at the original game's.
+
 ## 0.2.0-preview.8
 
 - Resolution scale in Game settings is now called Picture sharpness and goes up to Sharpest (4×); Original (1×) is still the default.

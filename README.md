@@ -132,12 +132,13 @@ download is checked against its MD5 and unpacked into private app storage
 (about 3.1 GB installed; allow 5 GB free during setup, since the archive is
 kept until it is unpacked). A stopped or dropped download continues where it
 left off. The switch turns on once both are installed, and **Remove HD
-textures** deletes them. Most phone GPUs cannot sample the pack's BC7 images,
-so the game decodes them to RGBA, four times their size. The launcher halves
-images over 1024 texels and caps texture memory at 1 GiB. In the emulator,
-Delfino Plaza then needs about 560 MiB of texture memory, against 1.1 GiB
-with a 2048 limit. Loading screens take longer while the pack's images are
-decoded.
+textures** deletes them. GPUs that sample the pack's BC7 images, such as the
+Adreno 750, get every image at full size: Delfino Plaza's take about 175 MiB.
+Other GPUs get them decoded to RGBA, four times their size, so the launcher
+halves those with more texels than 1024×1024 and caps texture memory at
+1 GiB; in the emulator, whose GPU takes no BC7, Delfino Plaza then needs
+about 560 MiB. Loading screens take longer while the pack's images are
+prepared.
 Connect a USB/Bluetooth controller or use the handheld's built-in gamepad.
 **Android performance hints** defaults on and lets supported devices adjust
 CPU scheduling to the frame workload. It does not force clock speeds or
