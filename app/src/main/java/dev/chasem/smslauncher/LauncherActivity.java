@@ -29,6 +29,11 @@ public class LauncherActivity extends Activity {
     private TextView hdInfo;
     private Button hdButton;
     private boolean hdWorking;
+    // The Eclipse app's: the disc it is made from, and its download and patch.
+    private EclipseDisc eclipse;
+    private TextView eclipseInfo;
+    private Button eclipseButton;
+    private boolean eclipseWorking;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -37,6 +42,7 @@ public class LauncherActivity extends Activity {
         disc.getParentFile().mkdirs(); card.mkdirs(); game.mkdirs(); new File(game, "cache").mkdirs();
         prefs = getSharedPreferences("settings", MODE_PRIVATE);
         textures = new TexturePack(game);
+        if (BuildConfig.ECLIPSE) eclipse = new EclipseDisc(disc);
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setBackgroundColor(Color.rgb(12, 26, 42));
@@ -57,11 +63,16 @@ public class LauncherActivity extends Activity {
             return insets;
         });
         setContentView(layout);
-        content = panel(columns, "Super Mario Sunshine");
-        label("Import a US revision 0 disc image, then play with your handheld's controls or a connected controller.", 14);
+        content = panel(columns, BuildConfig.ECLIPSE ? "Super Mario Eclipse" : "Super Mario Sunshine");
+        label(BuildConfig.ECLIPSE
+            ? "Import your US revision 0 Super Mario Sunshine disc image, then download Super Mario Eclipse: the launcher patches your copy into Eclipse. An Eclipse disc image made with Eclipse's own patcher can be imported instead."
+            : "Import a US revision 0 disc image, then play with your handheld's controls or a connected controller.", 14);
         status = label("", 16);
         button("Play", () -> {
-            if (!disc.isFile()) { message("Import a disc image first."); return; }
+            if (!disc.isFile()) {
+                message(BuildConfig.ECLIPSE && eclipse.sunshineImported() ? "Download Super Mario Eclipse first." : "Import a disc image first.");
+                return;
+            }
             if (prefs.getBoolean("hd_textures", false) && !textures.installed()) {
                 message("HD textures are on but not downloaded. Download them in Game settings, or turn them off.");
                 return;
@@ -77,11 +88,17 @@ public class LauncherActivity extends Activity {
             catch (IOException e) { message(e.getMessage()); }
         });
         button("Import disc image", () -> pick(DISC));
+        if (BuildConfig.ECLIPSE) {
+            eclipseInfo = label("", 13);
+            eclipseButton = new Button(this); eclipseButton.setAllCaps(false); content.addView(eclipseButton);
+            eclipseButton.setOnClickListener(v -> eclipseAction());
+        }
         label("Saves and diagnostics", 18);
         button("Input test (controllers and keyboards)", () -> startActivity(new Intent(this, InputMonitorActivity.class)));
         button("Import save backup (.zip)", () -> pick(IMPORT_SAVE));
-        button("Export save backup", () -> create(EXPORT_SAVE, "application/zip", "sunshine-save.zip"));
-        button("Export game log", () -> create(EXPORT_LOG, "text/plain", "sunshine-game.log"));
+        String saveName = BuildConfig.ECLIPSE ? "eclipse" : "sunshine";
+        button("Export save backup", () -> create(EXPORT_SAVE, "application/zip", saveName + "-save.zip"));
+        button("Export game log", () -> create(EXPORT_LOG, "text/plain", saveName + "-game.log"));
         content = panel(columns, "Game settings");
         button("Controller configuration", () -> startActivity(new Intent(this, ControllerConfigActivity.class)));
         choice("Frame rate", "frame_rate", new String[]{"30", "60"}, "60");
@@ -179,8 +196,56 @@ public class LauncherActivity extends Activity {
         try (FileOutputStream out = new FileOutputStream(new File(game, "settings.txt"))) { out.write(text.getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
     }
     private void refresh() {
-        message(disc.isFile() ? "Disc ready · " + (disc.length() / 1048576) + " MB" : "No disc imported yet.");
+        if (BuildConfig.ECLIPSE && !disc.isFile() && eclipse.sunshineImported())
+            message("Super Mario Sunshine disc imported. Download Super Mario Eclipse next.");
+        else
+            message(disc.isFile() ? (BuildConfig.ECLIPSE ? "Super Mario Eclipse ready · " : "Disc ready · ")
+                + (disc.length() / 1048576) + " MB" : "No disc imported yet.");
         refreshTextures();
+        refreshEclipse();
+    }
+    private void refreshEclipse() {
+        if (!BuildConfig.ECLIPSE || eclipseWorking) return;
+        long partial = eclipse.partialBytes();
+        eclipseButton.setVisibility(eclipse.installed() ? View.GONE : View.VISIBLE);
+        if (eclipse.installed())
+            eclipseInfo.setText(EclipseDisc.NAME + " by the Eclipse Team, from GameBanana, patched into your disc.");
+        else {
+            eclipseInfo.setText((partial > 0
+                ? "Partly downloaded · " + TexturePack.mb(partial) + " MB. Download again to continue."
+                : EclipseDisc.NAME + " by the Eclipse Team: about " + TexturePack.mb(EclipseDisc.SIZE)
+                    + " MB to download; allow " + (EclipseDisc.SIZE + EclipseDisc.RESULT_SIZE + (1L << 30) - 1) / (1L << 30)
+                    + " GB of free space.")
+                + (eclipse.sunshineImported() ? "" : " Import your Super Mario Sunshine disc image first."));
+            eclipseButton.setText(partial > 0 ? "Continue Super Mario Eclipse download" : "Download Super Mario Eclipse");
+        }
+    }
+    private void eclipseAction() {
+        if (eclipseWorking) { eclipse.stop(); eclipseButton.setText("Stopping…"); return; }
+        if (busy) return;
+        if (!eclipse.sunshineImported()) { message("Import your Super Mario Sunshine disc image first."); return; }
+        // The release's 7z needs a 256 MB dictionary in the launcher's memory.
+        if (Runtime.getRuntime().maxMemory() < (320L << 20)) {
+            message("This device gives the launcher too little memory to unpack Super Mario Eclipse. Make the Eclipse disc image with Eclipse's own patcher on a computer, and import it instead.");
+            return;
+        }
+        busy = eclipseWorking = true;
+        eclipseButton.setText("Stop");
+        getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        eclipseInfo.setText("Starting the download… Keep the launcher open.");
+        io.execute(() -> {
+            String failure = null;
+            try { eclipse.install(text -> runOnUiThread(() -> eclipseInfo.setText(text))); }
+            catch (Exception e) { failure = e.getMessage() == null ? "Super Mario Eclipse could not be set up." : e.getMessage(); }
+            final String error = failure;
+            runOnUiThread(() -> {
+                busy = eclipseWorking = false;
+                getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                refresh();
+                if (error != null) { eclipseInfo.setText(error + "\n" + eclipseInfo.getText()); message(error); }
+                else message("Super Mario Eclipse is ready. Choose Play.");
+            });
+        });
     }
     private void refreshTextures() {
         if (hdWorking) return;
@@ -238,12 +303,12 @@ public class LauncherActivity extends Activity {
         io.execute(() -> {
             String done;
             try {
-                if (request == DISC) { importDisc(uri); done = "Disc imported. Ready to play."; }
+                if (request == DISC) done = importDisc(uri);
                 else if (request == IMPORT_SAVE) { importSave(uri); done = "Save imported. The previous save is kept in the local backup."; }
                 else if (request == EXPORT_SAVE) { exportSave(uri); done = "Save backup exported."; }
                 else { exportLog(uri); done = "Game log exported."; }
             } catch (Exception e) { done = "Could not finish: " + e.getMessage(); }
-            final String text = done; runOnUiThread(() -> { busy = false; message(text); });
+            final String text = done; runOnUiThread(() -> { busy = false; refreshEclipse(); message(text); });
         });
     }
     private InputStream input(Uri uri) throws IOException {
@@ -259,17 +324,38 @@ public class LauncherActivity extends Activity {
         while ((n = in.read(buf)) != -1) { total += n; if (total > limit) throw new IOException("File is too large."); out.write(buf, 0, n); }
         return total;
     }
-    private void importDisc(Uri uri) throws IOException {
+    private String importDisc(Uri uri) throws IOException {
         File temp = new File(disc.getParentFile(), "import.part");
         try {
             try (InputStream in = input(uri); OutputStream out = new FileOutputStream(temp)) { copy(in, out, 2L << 30); }
+            String id;
             try (RandomAccessFile in = new RandomAccessFile(temp, "r")) {
                 byte[] header = new byte[32]; in.readFully(header);
-                if (!new String(header, 0, 6, java.nio.charset.StandardCharsets.US_ASCII).equals("GMSE01") || header[7] != 0
+                id = new String(header, 0, 6, java.nio.charset.StandardCharsets.US_ASCII);
+                boolean eclipseDisc = BuildConfig.ECLIPSE && id.equals("GMSE04");
+                if (!(id.equals("GMSE01") || eclipseDisc) || header[7] != 0
                     || header[28] != (byte)0xc2 || header[29] != 0x33 || header[30] != (byte)0x9f || header[31] != 0x3d)
-                    throw new IOException("Use a US revision 0 Sunshine ISO or GCM image.");
+                    throw new IOException(BuildConfig.ECLIPSE ? "Use a US revision 0 Sunshine ISO or GCM image, or a Super Mario Eclipse v1.1.0 image."
+                        : "Use a US revision 0 Sunshine ISO or GCM image.");
             }
-            Files.move(temp.toPath(), disc.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            if (!BuildConfig.ECLIPSE) {
+                Files.move(temp.toPath(), disc.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+                return "Disc imported. Ready to play.";
+            }
+            // Eclipse's patch makes the expected image only from the exact disc it was made for.
+            String md5 = TexturePack.md5(temp);
+            if (id.equals("GMSE04")) {
+                if (!md5.equals(EclipseDisc.RESULT_MD5))
+                    throw new IOException("This is not the Super Mario Eclipse v1.1.0 image Eclipse's patcher makes.");
+                Files.move(temp.toPath(), disc.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+                eclipse.sunshineDisc().delete();
+                return "Super Mario Eclipse disc imported. Ready to play.";
+            }
+            if (!md5.equals(EclipseDisc.SOURCE_MD5))
+                throw new IOException("Eclipse patches only the unmodified US Sunshine ISO (a 1:1 copy; compressed or trimmed images do not work).");
+            if (disc.isFile()) return "Super Mario Eclipse is already set up, so this disc was not kept.";
+            Files.move(temp.toPath(), eclipse.sunshineDisc().toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            return "Disc imported. Now choose Download Super Mario Eclipse.";
         } finally { temp.delete(); }
     }
     private void importSave(Uri uri) throws IOException {
@@ -287,7 +373,13 @@ public class LauncherActivity extends Activity {
                     try (OutputStream out = new FileOutputStream(f)) { total += copy(zip, out, (16L << 20) - total); }
                 }
             }
-            if (!new File(staged, "index.txt").isFile() || !new File(staged, "super_mario_sunshine.dat").isFile()
+            if (BuildConfig.ECLIPSE) {
+                // The game keeps Eclipse's (GMSE04) card files under its ID.
+                String[] names = staged.list();
+                boolean any = false;
+                if (names != null) for (String name : names) any |= name.startsWith("GMSE04_") && name.endsWith(".dat");
+                if (!new File(staged, "index.txt").isFile() || !any) throw new IOException("Backup is missing Eclipse card files.");
+            } else if (!new File(staged, "index.txt").isFile() || !new File(staged, "super_mario_sunshine.dat").isFile()
                 || !new File(staged, "super_mario_sunshine.stat").isFile()) throw new IOException("Backup is missing Sunshine card files.");
             File backup = new File(root, "saves/previous"); erase(backup);
             if (!card.renameTo(backup)) throw new IOException("Previous save could not be backed up.");

@@ -6,6 +6,8 @@ and moves them under that preview's heading. See AGENTS.md.
 
 ## Unreleased
 
+- A second app, SMS Eclipse, plays Super Mario Eclipse: import your Super Mario Sunshine disc in it and choose Download Super Mario Eclipse, which downloads the mod (about 851 MB) and patches your copy; it installs beside SMS Launcher with its own disc and saves.
+
 ## 0.2.0-preview.9
 
 - HD textures now show at full detail, as on a PC, on phones whose graphics chip reads the pack directly (such as the Snapdragon 8 Gen 3); before, the largest ones were shown at lower detail, and wide ones at the original game's.
