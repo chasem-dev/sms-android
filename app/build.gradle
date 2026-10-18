@@ -51,6 +51,25 @@ android {
             }
         }
     }
+    // Two apps from one launcher: Super Mario Sunshine, and Super Mario Eclipse
+    // (the game built with the Eclipse mods, playing a disc patched from the
+    // player's own). Each installs beside the other, with its own disc and saves.
+    flavorDimensions = ['game']
+    productFlavors {
+        sunshine {
+            dimension 'game'
+            buildConfigField 'boolean', 'ECLIPSE', 'false'
+            manifestPlaceholders = [appLabel: 'SMS Launcher', largeHeap: 'false']
+        }
+        eclipse {
+            dimension 'game'
+            applicationIdSuffix '.eclipse'
+            buildConfigField 'boolean', 'ECLIPSE', 'true'
+            // Eclipse's release is a 7z with a 256 MB LZMA2 dictionary.
+            manifestPlaceholders = [appLabel: 'SMS Eclipse', largeHeap: 'true']
+            externalNativeBuild { cmake { arguments '-DSMS_ECLIPSE=ON'; targets 'sms_abi_check' } }
+        }
+    }
     externalNativeBuild { cmake { path "${portRoot}/CMakeLists.txt"; version '3.22.1' } }
     sourceSets {
         main {

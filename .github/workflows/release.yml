@@ -90,6 +90,7 @@ jobs:
           SHA: ${{ steps.version.outputs.sha }}
         run: |
           gh release create "v$NAME" "dist/sms-android-$NAME-arm64.apk" "dist/sms-android-$NAME-arm64.apk.sha256" \
+            "dist/sms-android-eclipse-$NAME-arm64.apk" "dist/sms-android-eclipse-$NAME-arm64.apk.sha256" \
             --prerelease --target "$SHA" --title "Android $NAME" --notes-file "$RUNNER_TEMP/notes.md"
       - name: Move the released lines out of Unreleased
         if: steps.version.outputs.skip != 'true'

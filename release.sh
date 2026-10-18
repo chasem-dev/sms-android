@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Build, align and sign the release APK into dist/. SMS_ANDROID_PREVIEW
+# Build, align and sign the release APKs into dist/: Super Mario Sunshine's
+# and Super Mario Eclipse's. SMS_ANDROID_PREVIEW
 # overrides gradle.properties' preview number; extra arguments go to Gradle.
 # Pushes to main publish releases through .github/workflows/release.yml.
 set -euo pipefail
@@ -32,19 +33,23 @@ name=$version
 [[ $preview == 0 ]] || name="$version-preview.$preview"
 
 sms-port/android/build-native.sh --prepare
-./gradlew :app:assembleRelease "-PsmsPortRoot=$root/sms-port" "-PsmsAndroidPreview=$preview" "${@}"
+./gradlew :app:assembleSunshineRelease :app:assembleEclipseRelease "-PsmsPortRoot=$root/sms-port" "-PsmsAndroidPreview=$preview" "${@}"
 
 mkdir -p dist
-apk="dist/sms-android-$name-arm64.apk"
-"$build_tools/zipalign" -P 16 -f 4 app/build/outputs/apk/release/app-release-unsigned.apk "$apk.aligned"
-"$build_tools/apksigner" sign --ks "$keystore" --ks-key-alias "$key_alias" \
-  --ks-pass env:SMS_ANDROID_KEYSTORE_PASS --key-pass env:SMS_ANDROID_KEYSTORE_PASS --out "$apk" "$apk.aligned"
-rm -f "$apk.aligned" "$apk.idsig"
-cert=$("$build_tools/apksigner" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
-if [[ $cert != "$expected_cert" ]]; then
-  rm -f "$apk"
-  echo "Signed with certificate $cert, not the previews' $expected_cert." >&2; exit 1
-fi
-(cd dist && sha256sum "$(basename "$apk")" > "$(basename "$apk").sha256")
-echo "Built $apk"
-cat "$apk.sha256"
+# flavor, APK name
+for build in "sunshine sms-android-$name-arm64.apk" "eclipse sms-android-eclipse-$name-arm64.apk"; do
+  read -r flavor file <<< "$build"
+  apk="dist/$file"
+  "$build_tools/zipalign" -P 16 -f 4 "app/build/outputs/apk/$flavor/release/app-$flavor-release-unsigned.apk" "$apk.aligned"
+  "$build_tools/apksigner" sign --ks "$keystore" --ks-key-alias "$key_alias" \
+    --ks-pass env:SMS_ANDROID_KEYSTORE_PASS --key-pass env:SMS_ANDROID_KEYSTORE_PASS --out "$apk" "$apk.aligned"
+  rm -f "$apk.aligned" "$apk.idsig"
+  cert=$("$build_tools/apksigner" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+  if [[ $cert != "$expected_cert" ]]; then
+    rm -f "$apk"
+    echo "Signed with certificate $cert, not the previews' $expected_cert." >&2; exit 1
+  fi
+  (cd dist && sha256sum "$file" > "$file.sha256")
+  echo "Built $apk"
+  cat "$apk.sha256"
+done

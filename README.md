@@ -10,8 +10,12 @@ desktop [SMS Launcher](https://github.com/chasem-dev/sms-launcher) instead.
 ## Download
 
 Tester APKs are published as pre-releases on this repository's
-[Releases](https://github.com/chasem-dev/sms-android/releases) page. Install
-over the previous preview to keep your imported disc and saves. Previews 1 to
+[Releases](https://github.com/chasem-dev/sms-android/releases) page. Each
+preview has two: `sms-android-<version>-arm64.apk` plays Super Mario Sunshine,
+and `sms-android-eclipse-<version>-arm64.apk` (SMS Eclipse) plays
+[Super Mario Eclipse](https://gamebanana.com/mods/536309). They install side
+by side, each with its own disc and saves. Install over the previous preview
+to keep your imported disc and saves. Previews 1 to
 17 were published from the desktop launcher's repository as
 `android-pr-107-v*` pre-releases; this repository's builds update them in place.
 [CHANGELOG.md](CHANGELOG.md) lists what changed in each preview.
@@ -59,11 +63,17 @@ Accept the SDK licenses, set `ANDROID_HOME` and `JAVA_HOME`, and run:
 The script downloads checksum-verified SDL 2.32.10, initializes the port's
 decompilation submodule, and uses the checked-in Gradle wrapper to build only
 `arm64-v8a`. The installable debug APK is
-`app/build/outputs/apk/debug/app-debug.apk`.
+`app/build/outputs/apk/sunshine/debug/app-sunshine-debug.apk`.
+`SMS_ECLIPSE=1 ./build.sh` builds the Super Mario Eclipse app instead,
+`app/build/outputs/apk/eclipse/debug/app-eclipse-debug.apk`: the game with
+the Eclipse mods built in (the port's `-DSMS_ECLIPSE=ON`, which fetches their
+sources at configure time; see the port's `docs/ECLIPSE.md`), and checked
+against the mods' declarations after linking.
 
 `tests/check-input-monitor.sh`, `tests/check-controller-mapping.sh` and
 `tests/check-texture-pack.sh` run the input monitor's, controller mapping's and
-texture pack installer's unit tests without the Android SDK.
+texture pack installer's unit tests without the Android SDK, and
+`tests/check-vcdiff.sh` the Eclipse disc patcher's.
 
 ## Releases
 
@@ -73,8 +83,8 @@ Merging a pull request into `main` publishes a release automatically, through
 
 1. It numbers the next preview of `smsAndroidVersion` (`0.2.0-preview.1`,
    `0.2.0-preview.2`, …) from the existing release tags.
-2. It builds the release APK with `release.sh`, signed with the keystore in
-   the `ANDROID_KEYSTORE_BASE64` repository secret.
+2. It builds the release APKs, Sunshine's and Eclipse's, with `release.sh`,
+   signed with the keystore in the `ANDROID_KEYSTORE_BASE64` repository secret.
 3. It publishes a GitHub pre-release with the Unreleased lines as its notes,
    then commits those lines under the new preview's heading in `CHANGELOG.md`.
 
@@ -88,7 +98,7 @@ To move the game, check out the new commit in the submodule
 (`git -C sms-port checkout <commit>`), commit it with a changelog line for
 each change testers will notice, and merge.
 
-`./release.sh` builds the same signed APK locally into `dist/`. It refuses to
+`./release.sh` builds the same signed APKs locally into `dist/`. It refuses to
 run with uncommitted changes, so the footer names clean source revisions. It
 signs with `~/.android/debug.keystore` unless `SMS_ANDROID_KEYSTORE` (and
 `SMS_ANDROID_KEYSTORE_PASS`, `SMS_ANDROID_KEY_ALIAS`) name another key, and
@@ -219,6 +229,24 @@ device suggests a different problem from a controller producing unmapped keys.
 Export the sample to identify the device IDs and received codes before choosing
 a mapping; the monitor itself does not fix or guess unknown controller layouts.
 
+### Super Mario Eclipse
+
+SMS Eclipse, the second APK, plays Super Mario Eclipse v1.1.0 by the Eclipse
+Team. Choose **Import disc image** and pick the same US revision 0 Sunshine
+ISO; it must be the unmodified 1:1 image (MD5
+`0c6d2edae9fdf40dfc410ff1623e4119`), since Eclipse's patch is made for that
+disc. Then choose **Download Super Mario Eclipse**: the launcher downloads the
+Eclipse Team's release (about 851 MB, from SMS Launcher's mirror of its
+GameBanana release, or GameBanana itself), checks it against its MD5 and
+patches your disc with it, giving the same `GMSE04` image Eclipse's own
+patcher makes. Allow 3 GB of free space besides the imported disc; the
+download and your Sunshine copy are deleted once the Eclipse disc is checked.
+A stopped download continues where it left off. Unpacking the release needs
+256 MB of the launcher's memory; on a device that grants less, make the image
+with Eclipse's patcher on a computer and import that instead (it is checked
+against MD5 `caa546309e0443f7b47632b040a250d7`). Its save backups hold the
+`GMSE04_` card files.
+
 **Export save backup** writes a ZIP you can keep or move to the desktop port's
 `card-a` folder. **Import save backup** accepts a ZIP containing the desktop
 port's `index.txt`, `super_mario_sunshine.dat` and
@@ -229,8 +257,8 @@ The import does not support Dolphin `.gci` or whole memory card images.
 
 **Export game log** uses the document picker to save diagnostic output.
 Disc and save import need no broad storage permission, and gameplay is
-offline. The Android launcher supplies the base game and the optional HD textures; the
-desktop launcher remains the path for Eclipse.
+offline. The Android launchers supply the base game, Super Mario Eclipse and
+the optional HD textures.
 
 ## Emulator validation
 
@@ -246,7 +274,7 @@ conversion instruction emitted by the compiler; use the newer image.
 adb shell getprop ro.product.cpu.abilist
 adb shell getprop ro.dalvik.vm.native.bridge
 adb shell dumpsys SurfaceFlinger
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb install -r app/build/outputs/apk/sunshine/debug/app-sunshine-debug.apk
 ```
 
 Import a copy of your disc and exported save, then test the ordinary title

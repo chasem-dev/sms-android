@@ -38,12 +38,20 @@ jobs:
         run: bash tests/check-controller-mapping.sh
       - name: Texture pack layout tests
         run: bash tests/check-texture-pack.sh
+      - name: Disc patch tests
+        run: bash tests/check-vcdiff.sh
       - name: Build debug APK
         run: ./build.sh --max-workers=4
+      - name: Build Super Mario Eclipse debug APK
+        run: SMS_ECLIPSE=1 ./build.sh --max-workers=4
       - name: Compiler cache statistics
         if: always()
         run: sccache --show-stats
       - uses: actions/upload-artifact@v4
         with:
           name: sms-android-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/sunshine/debug/app-sunshine-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sms-android-eclipse-debug-apk
+          path: app/build/outputs/apk/eclipse/debug/app-eclipse-debug.apk

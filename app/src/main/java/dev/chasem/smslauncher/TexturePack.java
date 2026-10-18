@@ -206,7 +206,7 @@ final class TexturePack {
 
     static long mb(long bytes) { return bytes / 1048576; }
 
-    private static String md5(File f) throws IOException {
+    static String md5(File f) throws IOException {
         try (InputStream in = new FileInputStream(f)) {
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] buf = new byte[1 << 18];
