@@ -6,6 +6,8 @@ and moves them under that preview's heading. See AGENTS.md.
 
 ## Unreleased
 
+## 0.2.0-preview.11
+
 - The game no longer fails to start with "could not reserve the game's compatibility address range" on phones where Android leaves little room for it, which mostly affected SMS Eclipse.
 
 ## 0.2.0-preview.10
