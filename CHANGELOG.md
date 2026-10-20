@@ -1,10 +1,12 @@
 # Changelog
 
-What changed in each Android preview, newest first. Each push to `main` with
-lines under Unreleased publishes a new preview with those lines as its notes,
-and moves them under that preview's heading. See AGENTS.md.
+What changed in each Android release and preview, newest first. Each push to
+`main` with lines under Unreleased publishes a new preview (or a full release)
+with those lines as its notes, and moves them under its heading. See AGENTS.md.
 
 ## Unreleased
+
+- SMS Eclipse no longer closes as soon as a stage's music starts on phones where Android keeps the game's usual memory address for itself.
 
 ## 0.2.0-preview.11
 

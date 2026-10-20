@@ -2,6 +2,8 @@
 """Read and update CHANGELOG.md for releases.
 
   changelog.py notes              print the Unreleased lines
+  changelog.py full-notes         the Unreleased lines, then each preview's since
+                                  the last full release, under their headings
   changelog.py release NAME FILE  move the lines in FILE from Unreleased into
                                   a new "## NAME" section below it
 """
@@ -27,6 +29,23 @@ def main(args):
         # treats any output as notes to publish.
         if unreleased:
             print('\n'.join(unreleased))
+    elif args == ['full-notes']:
+        # A full release's notes also gather what its previews brought, up to
+        # the last full release (a heading without "preview").
+        out = list(unreleased)
+        sections = []
+        for line in rest:
+            if line.startswith('## '):
+                if 'preview' not in line:
+                    break
+                sections.append([line.replace('## ', '### ', 1)])
+            elif line.strip() and sections:
+                sections[-1].append(line)
+        if sections:
+            out += ['', '## From the previews']
+            for section in sections:
+                out += [''] + section
+        print('\n'.join(out))
     elif len(args) == 3 and args[0] == 'release':
         released = [l for l in pathlib.Path(args[2]).read_text().splitlines() if l.strip()]
         # Lines merged while the release was building stay Unreleased.

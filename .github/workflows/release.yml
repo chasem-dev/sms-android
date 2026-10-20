@@ -1,7 +1,8 @@
 name: Release
 
 # Each push to main (a merged pull request) whose CHANGELOG.md has lines under
-# Unreleased publishes the next preview APK with those lines as its notes.
+# Unreleased publishes the next preview APK with those lines as its notes, or,
+# with smsAndroidFullRelease=true in gradle.properties, the full release.
 on:
   push:
     branches: [main]
@@ -34,14 +35,27 @@ jobs:
             echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
           version=$(sed -n 's/^smsAndroidVersion=//p' gradle.properties)
-          last=$(git tag -l "v$version-preview.*" | sed "s/^v$version-preview\.//" | sort -n | tail -1)
-          preview=$(( ${last:-0} + 1 ))
-          if (( preview > 99 )); then
-            echo "::error::$version has used all 99 previews. Raise smsAndroidVersion in gradle.properties."; exit 1
+          full=$(sed -n 's/^smsAndroidFullRelease=//p' gradle.properties)
+          # A version's previews count up from its full release's version
+          # code, so none can follow it.
+          if git rev-parse -q --verify "refs/tags/v$version" > /dev/null; then
+            echo "::error::$version is already released. Raise smsAndroidVersion in gradle.properties."; exit 1
+          fi
+          if [[ $full == true ]]; then
+            preview=0 name=$version
+            python3 scripts/changelog.py full-notes > "$RUNNER_TEMP/release-notes.md"
+          else
+            last=$(git tag -l "v$version-preview.*" | sed "s/^v$version-preview\.//" | sort -n | tail -1)
+            preview=$(( ${last:-0} + 1 ))
+            if (( preview > 99 )); then
+              echo "::error::$version has used all 99 previews. Raise smsAndroidVersion in gradle.properties."; exit 1
+            fi
+            name=$version-preview.$preview
+            cp "$RUNNER_TEMP/notes.md" "$RUNNER_TEMP/release-notes.md"
           fi
           echo "preview=$preview" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-          echo "name=$version-preview.$preview" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-java@v4
         if: steps.version.outputs.skip != 'true'
         with:
@@ -88,21 +102,34 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           NAME: ${{ steps.version.outputs.name }}
           SHA: ${{ steps.version.outputs.sha }}
+          PREVIEW: ${{ steps.version.outputs.preview }}
         run: |
+          kind=--prerelease
+          [[ $PREVIEW != 0 ]] || kind=--latest
           gh release create "v$NAME" "dist/sms-android-$NAME-arm64.apk" "dist/sms-android-$NAME-arm64.apk.sha256" \
             "dist/sms-android-eclipse-$NAME-arm64.apk" "dist/sms-android-eclipse-$NAME-arm64.apk.sha256" \
-            --prerelease --target "$SHA" --title "Android $NAME" --notes-file "$RUNNER_TEMP/notes.md"
+            "$kind" --target "$SHA" --title "Android $NAME" --notes-file "$RUNNER_TEMP/release-notes.md"
       - name: Move the released lines out of Unreleased
         if: steps.version.outputs.skip != 'true'
         env:
           NAME: ${{ steps.version.outputs.name }}
+          PREVIEW: ${{ steps.version.outputs.preview }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           for attempt in 1 2 3; do
             git fetch -q origin main && git reset -q --hard origin/main
             python3 scripts/changelog.py release "$NAME" "$RUNNER_TEMP/notes.md"
-            git commit -qam "Changelog for $NAME" -m 'No changelog: release notes only'
+            message="Changelog for $NAME"
+            # After a full release, pushes publish previews of the next patch.
+            if [[ $PREVIEW == 0 ]] && grep -qx "smsAndroidVersion=$NAME" gradle.properties; then
+              IFS=. read -r major minor patch <<< "$NAME"
+              next=$major.$minor.$((patch + 1))
+              sed -i -e "s/^smsAndroidVersion=.*/smsAndroidVersion=$next/" \
+                -e 's/^smsAndroidFullRelease=.*/smsAndroidFullRelease=false/' gradle.properties
+              message="$message, and previews of $next from now on"
+            fi
+            git commit -qam "$message" -m 'No changelog: release notes only'
             git push -q origin HEAD:main && exit 0
           done
           echo '::error::Could not push the changelog update.'; exit 1
