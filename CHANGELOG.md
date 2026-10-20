@@ -6,6 +6,8 @@ with those lines as its notes, and moves them under its heading. See AGENTS.md.
 
 ## Unreleased
 
+## 1.1.0
+
 - 1.1.0 is a full release: the new launcher look, controller navigation in the launcher and touch screen controls from the 1.0.1 preview now reach everyone.
 
 ## 1.0.1-preview.1
