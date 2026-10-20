@@ -6,6 +6,8 @@ with those lines as its notes, and moves them under its heading. See AGENTS.md.
 
 ## Unreleased
 
+## 1.0.1-preview.1
+
 - Touch screen controls: turn on Settings → Controls → Touch screen controls to play with a GameCube controller drawn on the screen.
 - The launcher has a new look, matching the desktop SMS Launcher: the seaside artwork with one big button that walks you through setup and then plays, and settings grouped into pages behind the gear button.
 - The launcher can be used with a controller: the D-pad or stick moves between buttons, A selects, B goes back, and Start opens settings.
