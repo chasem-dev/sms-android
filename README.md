@@ -144,10 +144,14 @@ uninstalling; uninstalling also removes the imported disc.
 
 ## Use
 
-Install the APK, open the landscape SMS Launcher, and choose **Import disc image**. Pick a
+Install the APK and open the landscape SMS Launcher. Its big yellow button
+does the next step until the game is ready: first **Import disc image**. Pick a
 US revision 0 Sunshine ISO or GCM using Android's document picker. Import
 copies it into private app storage; allow enough free space for that copy.
-Choose frame rate, picture sharpness, aspect ratio and volume, then **Play**.
+The button then reads **Play**. The gear beside it (or Start on a controller)
+opens Settings: Gameplay, Controls, Graphics, Performance, Saves & data and
+About. Changes save as you make them. A controller's D-pad or stick moves
+through the launcher, A selects and B goes back.
 **Picture sharpness** is the internal resolution: Original (1×, the
 GameCube's 640×528, the default), Sharper (2×), Very sharp (3×) or
 Sharpest (4×). Higher settings need more of the graphics chip.
@@ -233,7 +237,7 @@ some legacy game data still stores addresses in 32-bit fields. Confirm a
 successful title/save/stage load on the affected device before treating the
 physical-device crash as resolved.
 
-**Input test (controllers and keyboards)** under Saves and diagnostics opens
+**Input test** under Settings → Controls opens
 a landscape monitor without starting the game. It lists Android input devices
 and USB adapters, and shows live key/button down/up events, scan codes,
 modifiers, held keys and stick/trigger/hat axes. Bluetooth/wireless keyboards
@@ -257,7 +261,7 @@ SMS Eclipse, the second APK, plays Super Mario Eclipse v1.1.0 by the Eclipse
 Team. Choose **Import disc image** and pick the same US revision 0 Sunshine
 ISO; it must be the unmodified 1:1 image (MD5
 `0c6d2edae9fdf40dfc410ff1623e4119`), since Eclipse's patch is made for that
-disc. Then choose **Download Super Mario Eclipse**: the launcher downloads the
+disc. Then choose **Download Eclipse**: the launcher downloads the
 Eclipse Team's release (about 851 MB, from SMS Launcher's mirror of its
 GameBanana release, or GameBanana itself), checks it against its MD5 and
 patches your disc with it, giving the same `GMSE04` image Eclipse's own
@@ -269,15 +273,16 @@ with Eclipse's patcher on a computer and import that instead (it is checked
 against MD5 `caa546309e0443f7b47632b040a250d7`). Its save backups hold the
 `GMSE04_` card files.
 
-**Export save backup** writes a ZIP you can keep or move to the desktop port's
-`card-a` folder. **Import save backup** accepts a ZIP containing the desktop
+Settings → Saves & data has your saves and the game log. **Back up your save**
+writes a ZIP you can keep or move to the desktop port's
+`card-a` folder. **Restore a backup** accepts a ZIP containing the desktop
 port's `index.txt`, `super_mario_sunshine.dat` and
 `super_mario_sunshine.stat`, at the root or beneath `card-a/`. Import keeps
 the prior card in a private `saves/previous` folder. Use Export before
 uninstalling: uninstalling deletes the disc, saves, settings and caches.
 The import does not support Dolphin `.gci` or whole memory card images.
 
-**Export game log** uses the document picker to save diagnostic output.
+**Game log** uses the document picker to save diagnostic output.
 Disc and save import need no broad storage permission, and gameplay is
 offline. The Android launchers supply the base game, Super Mario Eclipse and
 the optional HD textures.
