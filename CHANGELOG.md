@@ -6,6 +6,8 @@ with those lines as its notes, and moves them under its heading. See AGENTS.md.
 
 ## Unreleased
 
+## 1.0.0
+
 - SMS Eclipse no longer closes as soon as a stage's music starts on phones where Android keeps the game's usual memory address for itself.
 
 ## 0.2.0-preview.11
