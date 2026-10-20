@@ -1,3 +1,9 @@
+<p align="center">
+  <a href="https://discord.gg/97sVPsbxsY"><img src="https://invidget.switchblade.xyz/97sVPsbxsY" alt="Join the Super Mario Sunshine Discord server"></a>
+  <br>
+  <a href="https://discord.gg/97sVPsbxsY"><img src="https://img.shields.io/badge/Discord-Join%20the%20server-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Join our Discord"></a>
+</p>
+
 # SMS Launcher for Android
 
 A native Android launcher for the [Super Mario Sunshine PC port](https://github.com/chasem-dev/sms-pc-port).
@@ -9,16 +15,17 @@ desktop [SMS Launcher](https://github.com/chasem-dev/sms-launcher) instead.
 
 ## Download
 
-Tester APKs are published as pre-releases on this repository's
-[Releases](https://github.com/chasem-dev/sms-android/releases) page. Each
-preview has two: `sms-android-<version>-arm64.apk` plays Super Mario Sunshine,
-and `sms-android-eclipse-<version>-arm64.apk` (SMS Eclipse) plays
+APKs are published on this repository's
+[Releases](https://github.com/chasem-dev/sms-android/releases) page: full
+releases, starting with 1.0.0, and tester previews between them as
+pre-releases. Each has two: `sms-android-<version>-arm64.apk` plays Super Mario
+Sunshine, and `sms-android-eclipse-<version>-arm64.apk` (SMS Eclipse) plays
 [Super Mario Eclipse](https://gamebanana.com/mods/536309). They install side
-by side, each with its own disc and saves. Install over the previous preview
-to keep your imported disc and saves. Previews 1 to
+by side, each with its own disc and saves. Install over the previous release
+or preview to keep your imported disc and saves. Previews 1 to
 17 were published from the desktop launcher's repository as
 `android-pr-107-v*` pre-releases; this repository's builds update them in place.
-[CHANGELOG.md](CHANGELOG.md) lists what changed in each preview.
+[CHANGELOG.md](CHANGELOG.md) lists what changed in each release and preview.
 
 ## Status
 
