@@ -19,6 +19,7 @@ public class GameActivity extends SDLActivity {
     private final java.util.Set<Integer> assignedBackPresses = new java.util.HashSet<>();
     private volatile String displayRequest = "not requested";
     private volatile String gamePolicy = "not queried";
+    private TouchControlsView touchControls;
     private SharedPreferences settings() { return getSharedPreferences("settings", MODE_PRIVATE); }
     @Override protected SDLSurface createSDLSurface(Context context) {
         return new SDLSurface(context) {
@@ -58,7 +59,10 @@ public class GameActivity extends SDLActivity {
         android.util.Log.i("SMSLauncher", gamePolicy);
     }
     @Override protected void onResume() { reportGamePolicy(true); super.onResume(); }
-    @Override protected void onPause() { super.onPause(); reportGamePolicy(false); }
+    @Override protected void onPause() {
+        super.onPause(); reportGamePolicy(false);
+        if (touchControls != null) touchControls.releaseAll();
+    }
     @Override protected String[] getLibraries() { return new String[]{"SDL2", "smsbootstrap"}; }
     @Override protected String[] getArguments() {
         File data = new File(getFilesDir(), "game");
@@ -89,10 +93,38 @@ public class GameActivity extends SDLActivity {
     @Override protected void onCreate(Bundle state) {
         getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         super.onCreate(state);
+        if (!mBrokenLibraries && settings().getBoolean("touch_controls", false)) {
+            org.libsdl.app.TouchController.install();
+            touchControls = new TouchControlsView(this, new TouchControlsView.Output() {
+                @Override public void button(int keycode, boolean down) { org.libsdl.app.TouchController.button(keycode, down); }
+                @Override public void axis(int axis, float value) { org.libsdl.app.TouchController.axis(axis, value); }
+            });
+            mLayout.addView(touchControls, new android.widget.RelativeLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+        }
         if (android.os.Build.VERSION.SDK_INT >= 33)
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::finish);
     }
+    // A real controller's buttons, or its left stick or hat pushed well off
+    // centre (some controllers' other axes rest away from it).
+    private static boolean controllerInput(android.view.InputEvent event) {
+        if (event.getDevice() == null || event.getDevice().isVirtual()) return false;
+        int pad = android.view.InputDevice.SOURCE_GAMEPAD | android.view.InputDevice.SOURCE_JOYSTICK;
+        if (event instanceof android.view.KeyEvent)
+            return (event.getSource() & pad) != 0 && ((android.view.KeyEvent)event).getAction() == android.view.KeyEvent.ACTION_DOWN;
+        if ((event.getSource() & android.view.InputDevice.SOURCE_JOYSTICK) != android.view.InputDevice.SOURCE_JOYSTICK) return false;
+        android.view.MotionEvent motion = (android.view.MotionEvent)event;
+        for (int axis : new int[]{android.view.MotionEvent.AXIS_X, android.view.MotionEvent.AXIS_Y,
+                android.view.MotionEvent.AXIS_HAT_X, android.view.MotionEvent.AXIS_HAT_Y})
+            if (Math.abs(motion.getAxisValue(axis)) > 0.5f) return true;
+        return false;
+    }
+    @Override public boolean dispatchGenericMotionEvent(android.view.MotionEvent event) {
+        if (touchControls != null && controllerInput(event)) touchControls.controllerUsed();
+        return super.dispatchGenericMotionEvent(event);
+    }
     @Override public boolean dispatchKeyEvent(android.view.KeyEvent event) {
+        if (touchControls != null && controllerInput(event)) touchControls.controllerUsed();
         if (event.getKeyCode() == android.view.KeyEvent.KEYCODE_BACK) {
             if(event.getAction()==android.view.KeyEvent.ACTION_DOWN&&ControllerProfiles.backAssigned(this,event.getDevice()))
                 assignedBackPresses.add(event.getDeviceId());

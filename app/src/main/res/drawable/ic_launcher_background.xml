@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SMS Launcher's icon (the desktop launcher's build/icon.svg): a sun over
+     the sea. The 900-unit square is centred in a larger viewport so the
+     sun stays inside every launcher's icon shape. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="1215" android:viewportHeight="1215">
+    <path android:pathData="M0,0h1215v1215h-1215z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="0" android:endX="0" android:endY="1215">
+                <item android:offset="0" android:color="#FF185979" />
+                <item android:offset="1" android:color="#FF102B49" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <group android:translateX="95" android:translateY="95">
+        <path android:pathData="M344,397a211,211 0 1,0 422,0a211,211 0 1,0 -422,0z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear" android:startX="0" android:startY="186" android:endX="0" android:endY="608">
+                    <item android:offset="0" android:color="#FFFFE092" />
+                    <item android:offset="1" android:color="#FFEF9F3D" />
+                </gradient>
+            </aapt:attr>
+        </path>
+        <path android:fillColor="#FF22A3A7"
+            android:pathData="M59,672c141,-111 263,-131 390,-72c132,61 248,47 386,-49c62,-43 114,-50 164,-48v500H59Z" />
+        <path android:fillColor="#FF13627C"
+            android:pathData="M59,730c161,-69 285,-54 412,16c119,66 263,60 421,-29c44,-24 80,-38 107,-43v329H59Z" />
+        <path android:strokeColor="#FF9AF0DD" android:strokeWidth="32" android:strokeLineCap="round" android:strokeAlpha="0.8"
+            android:pathData="M158,788c114,-22 220,-6 311,44c124,68 260,61 383,-9" />
+        <path android:strokeColor="#FFFFD98B" android:strokeWidth="30" android:strokeLineCap="round"
+            android:pathData="M341,264l-31,-45m-76,142l-54,-11m549,-180l-16,54m111,75l-49,25" />
+    </group>
+</vector>
