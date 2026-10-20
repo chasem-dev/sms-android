@@ -9,9 +9,15 @@
 A native Android launcher for the [Super Mario Sunshine PC port](https://github.com/chasem-dev/sms-pc-port).
 The APK includes the compiled port and SDL, but no game data: you import a disc
 image made from your own copy. It targets ARM64 Android 10 or newer, with
-GLES 3.1 or newer and a controller. AYN Thor and similar modern Android
-handhelds are the intended hardware. On Windows, macOS and Linux, use the
-desktop [SMS Launcher](https://github.com/chasem-dev/sms-launcher) instead.
+GLES 3.1 or newer, and a controller or the on-screen touch controls. AYN Thor
+and similar modern Android handhelds are the intended hardware. On Windows,
+macOS and Linux, use the desktop
+[SMS Launcher](https://github.com/chasem-dev/sms-launcher) instead.
+
+<p align="center">
+  <img src="docs/screenshots/main-menu.jpg" width="49%" alt="The launcher's main menu: the seaside artwork with Super Mario Sunshine, Ready when you are, a big yellow Play button and a settings button">
+  <img src="docs/screenshots/settings-gameplay.jpg" width="49%" alt="Settings, Gameplay page: frame rate, volume and camera inversion, with pages for Controls, Graphics, Performance, Saves and data, and About">
+</p>
 
 ## Download
 
