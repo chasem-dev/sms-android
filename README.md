@@ -94,6 +94,17 @@ previews then count from 1 again. Each version allows 99 previews. Pull
 requests are built by `.github/workflows/build.yml`, which uploads the debug
 APK as an artifact.
 
+To publish a full release instead of the next preview, set
+`smsAndroidFullRelease=true` and `smsAndroidVersion` to the release's number in
+the pull request that should publish it. Its version code must be above every
+preview testers have (major × 1000000 + minor × 10000 + patch × 100 + preview),
+so a full release of a version that already has previews needs a higher number
+(0.2.0's previews were followed by 1.0.0). The workflow publishes it as the
+latest release, with the Unreleased lines and every preview's since the last
+full release as its notes, then sets `smsAndroidFullRelease=false` and moves
+`smsAndroidVersion` to the next patch, whose previews the following pushes
+publish.
+
 To move the game, check out the new commit in the submodule
 (`git -C sms-port checkout <commit>`), commit it with a changelog line for
 each change testers will notice, and merge.
