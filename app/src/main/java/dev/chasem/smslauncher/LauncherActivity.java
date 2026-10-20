@@ -101,6 +101,8 @@ public class LauncherActivity extends Activity {
         button("Export game log", () -> create(EXPORT_LOG, "text/plain", saveName + "-game.log"));
         content = panel(columns, "Game settings");
         button("Controller configuration", () -> startActivity(new Intent(this, ControllerConfigActivity.class)));
+        toggle("Touch screen controls", "touch_controls", false);
+        label("Shows a GameCube controller on the screen. It hides while a controller is used, and comes back when you touch the screen.", 13);
         choice("Frame rate", "frame_rate", new String[]{"30", "60"}, "60");
         choice("Picture sharpness", "resolution", new String[]{"1", "2", "3", "4"},
             new String[]{"Original (1×)", "Sharper (2×)", "Very sharp (3×)", "Sharpest (4×)"}, "1");
@@ -119,7 +121,7 @@ public class LauncherActivity extends Activity {
         toggle("Match display refresh to game FPS", "match_display_rate", false);
         toggle("Show performance overlay", "performance_overlay", false);
         toggle("Log performance timings", "timing_log", false);
-        label("Connect a Bluetooth or USB controller, or use the built-in controls on an Android handheld. Android Back returns to the launcher. Disc images and save backups are copied into private app storage; uninstalling removes them.", 15);
+        label("Connect a Bluetooth or USB controller, use the built-in controls on an Android handheld, or turn on touch screen controls. Android Back returns to the launcher. Disc images and save backups are copied into private app storage; uninstalling removes them.", 15);
         refresh();
     }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
@@ -180,7 +182,9 @@ public class LauncherActivity extends Activity {
         ControllerProfiles.writeGameFile(this);
         String text = "frame_rate=" + prefs.getString("frame_rate", "60") + "\nresolution=" + prefs.getString("resolution", "1")
             + "\nwidescreen=" + prefs.getString("widescreen", "16:9") + "\nvolume=" + prefs.getString("volume", "100")
-            + "\nmsaa=0\nfullscreen=on\nvsync=on\nbutton_prompts=auto\n"
+            + "\nmsaa=0\nfullscreen=on\nvsync=on\n"
+            // The touch controls are a GameCube controller, so the game shows its own buttons.
+            + "button_prompts=" + (prefs.getBoolean("touch_controls", false) ? "gamecube" : "auto") + "\n"
             // A GPU without BC7 gets the pack decoded to RGBA; images held so
             // are halved past 1024x1024 texels, keeping Delfino Plaza near 560
             // MiB (1.1 GiB at 2048). Blocks the GPU takes stay whole.

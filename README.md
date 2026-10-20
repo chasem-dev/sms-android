@@ -168,6 +168,10 @@ halves those with more texels than 1024×1024 and caps texture memory at
 about 560 MiB. Loading screens take longer while the pack's images are
 prepared.
 Connect a USB/Bluetooth controller or use the handheld's built-in gamepad.
+**Touch screen controls** (off by default) draws a GameCube controller over
+the game: both sticks are analog, the D-pad takes diagonals, and L and R press
+fully. The game shows GameCube button prompts while it is on. The controls hide
+while a real controller is used and come back when the screen is touched.
 **Android performance hints** defaults on and lets supported devices adjust
 CPU scheduling to the frame workload. It does not force clock speeds or
 bypass thermal limits. Toggle it off to compare the same scene and settings,

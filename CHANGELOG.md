@@ -6,6 +6,8 @@ with those lines as its notes, and moves them under its heading. See AGENTS.md.
 
 ## Unreleased
 
+- Touch screen controls: turn on Game settings → Touch screen controls to play with a GameCube controller drawn on the screen.
+
 ## 1.0.0
 
 - SMS Eclipse no longer closes as soon as a stage's music starts on phones where Android keeps the game's usual memory address for itself.
