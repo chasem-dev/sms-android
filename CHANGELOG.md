@@ -6,6 +6,8 @@ with those lines as its notes, and moves them under its heading. See AGENTS.md.
 
 ## Unreleased
 
+- SMS Eclipse no longer closes as soon as a stage's music starts on phones where Android keeps the game's usual memory address for itself.
+
 ## 0.2.0-preview.11
 
 - The game no longer fails to start with "could not reserve the game's compatibility address range" on phones where Android leaves little room for it, which mostly affected SMS Eclipse.
