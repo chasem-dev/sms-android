@@ -15,8 +15,8 @@ macOS and Linux, use the desktop
 [SMS Launcher](https://github.com/chasem-dev/sms-launcher) instead.
 
 <p align="center">
-  <img src="docs/screenshots/main-menu.jpg" width="49%" alt="The launcher's main menu: the seaside artwork with Super Mario Sunshine, Ready when you are, a big yellow Play button and a settings button">
-  <img src="docs/screenshots/settings-gameplay.jpg" width="49%" alt="Settings, Gameplay page: frame rate, volume and camera inversion, with pages for Controls, Graphics, Performance, Saves and data, and About">
+  <img src="docs/screenshots/main-menu.jpg" width="49%" alt="The launcher's main menu: the seaside artwork with Super Mario Sunshine, Ready when you are, a big yellow Play button, a settings button, and a Discord button in the top bar">
+  <img src="docs/screenshots/settings-gameplay.jpg" width="49%" alt="Settings, Gameplay page: frame rate, volume, language and camera inversion, with pages for Controls, Graphics, Performance, Saves and data, and About">
 </p>
 
 ## Download
@@ -159,7 +159,8 @@ copies it into private app storage; allow enough free space for that copy.
 The button then reads **Play**. The gear beside it (or Start on a controller)
 opens Settings: Gameplay, Controls, Graphics, Performance, Saves & data and
 About. Changes save as you make them. A controller's D-pad or stick moves
-through the launcher, A selects and B goes back.
+through the launcher, A selects and B goes back. The Discord button in the top
+bar opens an invite to the Discord server.
 **Language** under Gameplay plays the game in English (the default, the
 disc's own text) or in any language pack the game's
 `tools/mods/language-packs.json` lists: Deutsch, Español, Français, Italiano
