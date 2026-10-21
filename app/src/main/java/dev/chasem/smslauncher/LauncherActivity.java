@@ -61,6 +61,7 @@ public class LauncherActivity extends Activity {
     // The home screen
     private FrameLayout scene;
     private LinearLayout home, topBar, hero, statusBar, play, stepBox, taskBox, hints, update;
+    private View topSpace;
     private TextView device, updateTitle, updateText, heroText, playLabel, stepLabel, stepText, stepLink, statusText, taskTitle, taskPercent, taskDetail, taskStop, notice;
     private ImageView playIcon;
     private View statusDot;
@@ -179,18 +180,19 @@ public class LauncherActivity extends Activity {
         TextView version = ui.text("Version " + BuildConfig.VERSION_NAME + " · Game " + BuildConfig.GAME_REVISION, 11, 0xffd2eaf0, 500);
         names.addView(version, ui.margins(Ui.wrap(), 0, 3, 0, 0));
         bar.addView(names, ui.margins(Ui.wrap(), 10, 0, 0, 0));
-        bar.addView(new View(this), Ui.share(1));
+        bar.addView(topSpace = new View(this), Ui.share(1));
+        device = ui.text(Build.MODEL, 12, 0xffb7cdd6, 500);
+        device.setSingleLine(true);
+        bar.addView(device);
+        // In place of the device's name while a newer version is out, in
+        // whatever room the bar has left: its words shorten, not its buttons.
+        bar.addView(update = updateBanner(), ui.margins(Ui.share(1), 16, 0, 0, 0));
         // Join the Discord server, as the desktop launcher's Discord link.
         ImageView discord = ui.iconButton(R.drawable.ic_discord, Color.WHITE,
             Ui.states(ui.round(0xff5865f2, 10), ui.round(0xff4752c4, 10), ui.round(0xff5865f2, 10, Color.WHITE, 2.5f)), 7);
         discord.setContentDescription("Join our Discord server");
         discord.setOnClickListener(v -> open(DISCORD));
-        bar.addView(discord, ui.margins(new LinearLayout.LayoutParams(ui.dp(34), ui.dp(34)), 0, 0, 14, 0));
-        device = ui.text(Build.MODEL, 12, 0xffb7cdd6, 500);
-        device.setSingleLine(true);
-        bar.addView(device);
-        // In place of the device's name while a newer version is out.
-        bar.addView(update = updateBanner(), ui.margins(Ui.wrap(), 12, 0, 0, 0));
+        bar.addView(discord, ui.margins(new LinearLayout.LayoutParams(ui.dp(34), ui.dp(34)), 14, 0, 0, 0));
         return bar;
     }
     private LinearLayout hero() {
@@ -278,13 +280,16 @@ public class LauncherActivity extends Activity {
         banner.setVisibility(View.GONE);
         LinearLayout words = new LinearLayout(this); words.setOrientation(LinearLayout.VERTICAL);
         updateTitle = ui.text("", 13, Ui.SUN_TEXT, 750); updateTitle.setSingleLine(true);
-        words.addView(updateTitle);
+        updateTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        words.addView(updateTitle, Ui.fill());
         updateText = ui.text("", 11, Ui.MIST, 500); updateText.setSingleLine(true);
-        updateText.setEllipsize(android.text.TextUtils.TruncateAt.END); updateText.setMaxWidth(ui.dp(380));
-        words.addView(updateText, ui.margins(Ui.wrap(), 0, 3, 0, 0));
-        banner.addView(words);
+        updateText.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        words.addView(updateText, ui.margins(Ui.fill(), 0, 3, 0, 0));
+        banner.addView(words, Ui.share(1));
+        // The whole notice opens the release page, not only its button.
+        banner.setOnClickListener(v -> open(prefs.getString("update_url", SOURCE + "/releases")));
         TextView get = ui.glass("Get update"); get.setTextSize(12); get.setPadding(ui.dp(12), ui.dp(5), ui.dp(12), ui.dp(5));
-        get.setOnClickListener(v -> open(prefs.getString("update_url", SOURCE + "/releases")));
+        get.setOnClickListener(v -> banner.performClick());
         banner.addView(get, ui.margins(Ui.wrap(), 12, 0, 0, 0));
         ImageView hide = ui.iconButton(R.drawable.ic_close, Color.WHITE, ui.glassBackground(), 7);
         hide.setContentDescription("Hide until the next version");
@@ -337,6 +342,7 @@ public class LauncherActivity extends Activity {
             && !tag.equals(prefs.getString("update_dismissed", null));
         update.setVisibility(show ? View.VISIBLE : View.GONE);
         device.setVisibility(show ? View.GONE : View.VISIBLE);
+        topSpace.setVisibility(show ? View.GONE : View.VISIBLE);
         if (!show) return;
         String version = tag.substring(1);
         updateTitle.setText("Version " + version + " is out");

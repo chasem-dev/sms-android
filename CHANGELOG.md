@@ -6,6 +6,8 @@ with those lines as its notes, and moves them under its heading. See AGENTS.md.
 
 ## Unreleased
 
+- The update notice at the top of the launcher no longer pushes its Get update and close buttons off narrower screens, and tapping anywhere on it opens the download page.
+
 ## 1.2.0
 
 - The launcher's home screen has a Discord button at the top, which opens an invite to the Discord server.
