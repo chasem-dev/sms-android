@@ -272,9 +272,11 @@ public class LauncherActivity extends Activity {
 
     /** Get update: there while a newer version is on the releases page, which Android won't let the launcher install itself. */
     private TextView updateButton() {
-        TextView b = ui.text("Get update", 13, Ui.NAVY, 750);
+        TextView b = ui.text("Get update", 13, Ui.SUN_TEXT, 750);
         b.setGravity(Gravity.CENTER); b.setSingleLine(true);
-        b.setBackground(Ui.states(ui.round(Ui.SUN, 10), ui.round(Ui.SUN_LIGHT, 10), ui.round(Ui.SUN, 10, Color.WHITE, 2.5f)));
+        // See-through over the bar, tinted the sun's yellow.
+        b.setBackground(Ui.states(ui.round(0x33ffc75a, 10, Ui.SUN, 1), ui.round(0x59ffc75a, 10, Ui.SUN, 1),
+            ui.round(0x40ffc75a, 10, Color.WHITE, 2.5f)));
         b.setPadding(ui.dp(14), ui.dp(8), ui.dp(14), ui.dp(8));
         b.setFocusable(true); b.setClickable(true);
         b.setOnClickListener(v -> open(prefs.getString("update_url", SOURCE + "/releases")));
