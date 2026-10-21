@@ -180,6 +180,12 @@ public class LauncherActivity extends Activity {
         names.addView(version, ui.margins(Ui.wrap(), 0, 3, 0, 0));
         bar.addView(names, ui.margins(Ui.wrap(), 10, 0, 0, 0));
         bar.addView(new View(this), Ui.share(1));
+        // Join the Discord server, as the desktop launcher's Discord link.
+        ImageView discord = ui.iconButton(R.drawable.ic_discord, Color.WHITE,
+            Ui.states(ui.round(0xff5865f2, 10), ui.round(0xff4752c4, 10), ui.round(0xff5865f2, 10, Color.WHITE, 2.5f)), 7);
+        discord.setContentDescription("Join our Discord server");
+        discord.setOnClickListener(v -> open(DISCORD));
+        bar.addView(discord, ui.margins(new LinearLayout.LayoutParams(ui.dp(34), ui.dp(34)), 0, 0, 14, 0));
         device = ui.text(Build.MODEL, 12, 0xffb7cdd6, 500);
         device.setSingleLine(true);
         bar.addView(device);
