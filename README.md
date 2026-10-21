@@ -84,10 +84,11 @@ sources at configure time; see the port's `docs/ECLIPSE.md`), and checked
 against the mods' declarations after linking.
 
 `tests/check-input-monitor.sh`, `tests/check-controller-mapping.sh`,
-`tests/check-texture-pack.sh` and `tests/check-language-pack.sh` run the input
-monitor's, controller mapping's, texture pack installer's and language pack
-installer's unit tests without the Android SDK, and `tests/check-vcdiff.sh` the
-Eclipse disc patcher's.
+`tests/check-texture-pack.sh`, `tests/check-language-pack.sh` and
+`tests/check-update-check.sh` run the input monitor's, controller mapping's,
+texture pack installer's, language pack installer's and update check's unit
+tests without the Android SDK, and `tests/check-vcdiff.sh` the Eclipse disc
+patcher's.
 
 ## Releases
 
@@ -167,6 +168,14 @@ from the [HD texture extras](https://github.com/chasem-dev/sms-hd-texture-extras
 releases), checks it against its MD5 and installs it in private app storage,
 as the desktop SMS Launcher does. Saves work in every language. The Eclipse
 app has no Language setting: Super Mario Eclipse plays in English.
+Android doesn't let the launcher update itself, so it checks this
+repository's GitHub releases when it opens (at most every six hours) and,
+when a newer version is out, shows it in the top bar with **Get update**,
+which opens the release page. A full release hears of full releases; a
+preview also hears of newer previews, as the desktop launcher's Stable and
+Beta channels do. The new APK installs over the old one, keeping the disc and
+saves, because every release is signed with the same key. The × hides the
+notice until the next version.
 **Picture sharpness** is the internal resolution: Original (1×, the
 GameCube's 640×528, the default), Sharper (2×), Very sharp (3×) or
 Sharpest (4×). Higher settings need more of the graphics chip.

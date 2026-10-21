@@ -6,6 +6,7 @@ with those lines as its notes, and moves them under its heading. See AGENTS.md.
 
 ## Unreleased
 
+- The launcher says when a newer version is out, at the top of its home screen, with a button to its download page; previews hear of newer previews too.
 - Play in Deutsch, Español, Français, Italiano or Polski: choose Language under Settings → Gameplay, and the launcher downloads that language's pack (about 1 MB) when you next choose Play. Your saves work in every language.
 
 ## 1.1.0

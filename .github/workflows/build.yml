@@ -40,6 +40,8 @@ jobs:
         run: bash tests/check-texture-pack.sh
       - name: Language pack tests
         run: bash tests/check-language-pack.sh
+      - name: Update check tests
+        run: bash tests/check-update-check.sh
       - name: Disc patch tests
         run: bash tests/check-vcdiff.sh
       - name: Build debug APK

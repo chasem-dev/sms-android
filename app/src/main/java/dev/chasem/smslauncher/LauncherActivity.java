@@ -60,8 +60,8 @@ public class LauncherActivity extends Activity {
 
     // The home screen
     private FrameLayout scene;
-    private LinearLayout home, topBar, hero, statusBar, play, stepBox, taskBox, hints;
-    private TextView heroText, playLabel, stepLabel, stepText, stepLink, statusText, taskTitle, taskPercent, taskDetail, taskStop, notice;
+    private LinearLayout home, topBar, hero, statusBar, play, stepBox, taskBox, hints, update;
+    private TextView device, updateTitle, updateText, heroText, playLabel, stepLabel, stepText, stepLink, statusText, taskTitle, taskPercent, taskDetail, taskStop, notice;
     private ImageView playIcon;
     private View statusDot;
     private ProgressBar taskBar;
@@ -180,9 +180,11 @@ public class LauncherActivity extends Activity {
         names.addView(version, ui.margins(Ui.wrap(), 0, 3, 0, 0));
         bar.addView(names, ui.margins(Ui.wrap(), 10, 0, 0, 0));
         bar.addView(new View(this), Ui.share(1));
-        TextView device = ui.text(Build.MODEL, 12, 0xffb7cdd6, 500);
+        device = ui.text(Build.MODEL, 12, 0xffb7cdd6, 500);
         device.setSingleLine(true);
         bar.addView(device);
+        // In place of the device's name while a newer version is out.
+        bar.addView(update = updateBanner(), ui.margins(Ui.wrap(), 12, 0, 0, 0));
         return bar;
     }
     private LinearLayout hero() {
@@ -260,6 +262,80 @@ public class LauncherActivity extends Activity {
         taskBox.addView(taskBar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ui.dp(5)));
         panel.addView(taskBox, Ui.fill());
         return panel;
+    }
+
+    /** Says when a newer version is on the releases page, which Android won't let the launcher install itself. */
+    private LinearLayout updateBanner() {
+        LinearLayout banner = new LinearLayout(this); banner.setGravity(Gravity.CENTER_VERTICAL);
+        banner.setBackground(ui.round(0x33ffc75a, 10, Ui.SUN, 1));
+        banner.setPadding(ui.dp(12), ui.dp(4), ui.dp(4), ui.dp(4));
+        banner.setVisibility(View.GONE);
+        LinearLayout words = new LinearLayout(this); words.setOrientation(LinearLayout.VERTICAL);
+        updateTitle = ui.text("", 13, Ui.SUN_TEXT, 750); updateTitle.setSingleLine(true);
+        words.addView(updateTitle);
+        updateText = ui.text("", 11, Ui.MIST, 500); updateText.setSingleLine(true);
+        updateText.setEllipsize(android.text.TextUtils.TruncateAt.END); updateText.setMaxWidth(ui.dp(380));
+        words.addView(updateText, ui.margins(Ui.wrap(), 0, 3, 0, 0));
+        banner.addView(words);
+        TextView get = ui.glass("Get update"); get.setTextSize(12); get.setPadding(ui.dp(12), ui.dp(5), ui.dp(12), ui.dp(5));
+        get.setOnClickListener(v -> open(prefs.getString("update_url", SOURCE + "/releases")));
+        banner.addView(get, ui.margins(Ui.wrap(), 12, 0, 0, 0));
+        ImageView hide = ui.iconButton(R.drawable.ic_close, Color.WHITE, ui.glassBackground(), 7);
+        hide.setContentDescription("Hide until the next version");
+        hide.setOnClickListener(v -> {
+            prefs.edit().putString("update_dismissed", prefs.getString("update_tag", "")).apply();
+            showUpdate();
+            play.requestFocus();
+        });
+        banner.addView(hide, ui.margins(new LinearLayout.LayoutParams(ui.dp(30), ui.dp(30)), 6, 0, 0, 0));
+        return banner;
+    }
+    /** Looks for a newer release at most every few hours, in the background; offline, it tries again next time. */
+    private void checkForUpdate() {
+        showUpdate();
+        long now = System.currentTimeMillis();
+        if (Math.abs(now - prefs.getLong("update_checked", 0)) < UpdateCheck.INTERVAL_MS) return;
+        new Thread(() -> {
+            try {
+                UpdateCheck.Release newer = UpdateCheck.newer(releases(), BuildConfig.VERSION_CODE, UpdateCheck.isPreview(BuildConfig.VERSION_NAME));
+                SharedPreferences.Editor edit = prefs.edit().putLong("update_checked", now);
+                if (newer == null) edit.remove("update_tag").remove("update_url");
+                else edit.putString("update_tag", newer.tag).putString("update_url", newer.url);
+                edit.apply();
+                runOnUiThread(this::showUpdate);
+            } catch (Exception ignored) {}
+        }, "update-check").start();
+    }
+    private static List<UpdateCheck.Release> releases() throws IOException, org.json.JSONException {
+        java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(UpdateCheck.RELEASES).openConnection();
+        try {
+            c.setConnectTimeout(15000); c.setReadTimeout(15000);
+            c.setRequestProperty("Accept", "application/vnd.github+json");
+            c.setRequestProperty("User-Agent", "SMS Launcher for Android");
+            if (c.getResponseCode() != 200) throw new IOException("GitHub answered " + c.getResponseCode());
+            ByteArrayOutputStream body = new ByteArrayOutputStream();
+            try (InputStream in = c.getInputStream()) { copy(in, body, 4L << 20); }
+            org.json.JSONArray list = new org.json.JSONArray(body.toString("UTF-8"));
+            List<UpdateCheck.Release> releases = new ArrayList<>();
+            for (int i = 0; i < list.length(); i++) {
+                org.json.JSONObject r = list.getJSONObject(i);
+                if (!r.optBoolean("draft"))
+                    releases.add(new UpdateCheck.Release(r.optString("tag_name"), r.optString("html_url"), r.optBoolean("prerelease")));
+            }
+            return releases;
+        } finally { c.disconnect(); }
+    }
+    private void showUpdate() {
+        String tag = prefs.getString("update_tag", null);
+        boolean show = tag != null && UpdateCheck.versionCode(tag) > BuildConfig.VERSION_CODE
+            && !tag.equals(prefs.getString("update_dismissed", null));
+        update.setVisibility(show ? View.VISIBLE : View.GONE);
+        device.setVisibility(show ? View.GONE : View.VISIBLE);
+        if (!show) return;
+        String version = tag.substring(1);
+        updateTitle.setText("Version " + version + " is out");
+        updateText.setText("Install " + (BuildConfig.ECLIPSE ? "sms-android-eclipse-" : "sms-android-") + version
+            + "-arm64.apk over this one: your disc and saves stay.");
     }
 
     private LinearLayout statusBar() {
@@ -610,6 +686,7 @@ public class LauncherActivity extends Activity {
         super.onResume();
         hints.setVisibility(controllerConnected() ? View.VISIBLE : View.GONE);
         if (!busy) refresh();
+        checkForUpdate();
         if (!settingsOpen() && getCurrentFocus() == null) play.requestFocus();
     }
     @Override protected void onDestroy() { io.shutdown(); super.onDestroy(); }
