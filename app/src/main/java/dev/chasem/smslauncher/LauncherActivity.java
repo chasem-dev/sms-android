@@ -60,8 +60,8 @@ public class LauncherActivity extends Activity {
 
     // The home screen
     private FrameLayout scene;
-    private LinearLayout home, topBar, hero, statusBar, play, stepBox, taskBox, hints, update;
-    private TextView device, updateTitle, updateText, heroText, playLabel, stepLabel, stepText, stepLink, statusText, taskTitle, taskPercent, taskDetail, taskStop, notice;
+    private LinearLayout home, topBar, hero, statusBar, play, stepBox, taskBox, hints;
+    private TextView device, update, heroText, playLabel, stepLabel, stepText, stepLink, statusText, taskTitle, taskPercent, taskDetail, taskStop, notice;
     private ImageView playIcon;
     private View statusDot;
     private ProgressBar taskBar;
@@ -180,17 +180,17 @@ public class LauncherActivity extends Activity {
         names.addView(version, ui.margins(Ui.wrap(), 0, 3, 0, 0));
         bar.addView(names, ui.margins(Ui.wrap(), 10, 0, 0, 0));
         bar.addView(new View(this), Ui.share(1));
+        device = ui.text(Build.MODEL, 12, 0xffb7cdd6, 500);
+        device.setSingleLine(true);
+        bar.addView(device);
+        // In place of the device's name while a newer version is out.
+        bar.addView(update = updateButton());
         // Join the Discord server, as the desktop launcher's Discord link.
         ImageView discord = ui.iconButton(R.drawable.ic_discord, Color.WHITE,
             Ui.states(ui.round(0xff5865f2, 10), ui.round(0xff4752c4, 10), ui.round(0xff5865f2, 10, Color.WHITE, 2.5f)), 7);
         discord.setContentDescription("Join our Discord server");
         discord.setOnClickListener(v -> open(DISCORD));
-        bar.addView(discord, ui.margins(new LinearLayout.LayoutParams(ui.dp(34), ui.dp(34)), 0, 0, 14, 0));
-        device = ui.text(Build.MODEL, 12, 0xffb7cdd6, 500);
-        device.setSingleLine(true);
-        bar.addView(device);
-        // In place of the device's name while a newer version is out.
-        bar.addView(update = updateBanner(), ui.margins(Ui.wrap(), 12, 0, 0, 0));
+        bar.addView(discord, ui.margins(new LinearLayout.LayoutParams(ui.dp(34), ui.dp(34)), 14, 0, 0, 0));
         return bar;
     }
     private LinearLayout hero() {
@@ -270,31 +270,18 @@ public class LauncherActivity extends Activity {
         return panel;
     }
 
-    /** Says when a newer version is on the releases page, which Android won't let the launcher install itself. */
-    private LinearLayout updateBanner() {
-        LinearLayout banner = new LinearLayout(this); banner.setGravity(Gravity.CENTER_VERTICAL);
-        banner.setBackground(ui.round(0x33ffc75a, 10, Ui.SUN, 1));
-        banner.setPadding(ui.dp(12), ui.dp(4), ui.dp(4), ui.dp(4));
-        banner.setVisibility(View.GONE);
-        LinearLayout words = new LinearLayout(this); words.setOrientation(LinearLayout.VERTICAL);
-        updateTitle = ui.text("", 13, Ui.SUN_TEXT, 750); updateTitle.setSingleLine(true);
-        words.addView(updateTitle);
-        updateText = ui.text("", 11, Ui.MIST, 500); updateText.setSingleLine(true);
-        updateText.setEllipsize(android.text.TextUtils.TruncateAt.END); updateText.setMaxWidth(ui.dp(380));
-        words.addView(updateText, ui.margins(Ui.wrap(), 0, 3, 0, 0));
-        banner.addView(words);
-        TextView get = ui.glass("Get update"); get.setTextSize(12); get.setPadding(ui.dp(12), ui.dp(5), ui.dp(12), ui.dp(5));
-        get.setOnClickListener(v -> open(prefs.getString("update_url", SOURCE + "/releases")));
-        banner.addView(get, ui.margins(Ui.wrap(), 12, 0, 0, 0));
-        ImageView hide = ui.iconButton(R.drawable.ic_close, Color.WHITE, ui.glassBackground(), 7);
-        hide.setContentDescription("Hide until the next version");
-        hide.setOnClickListener(v -> {
-            prefs.edit().putString("update_dismissed", prefs.getString("update_tag", "")).apply();
-            showUpdate();
-            play.requestFocus();
-        });
-        banner.addView(hide, ui.margins(new LinearLayout.LayoutParams(ui.dp(30), ui.dp(30)), 6, 0, 0, 0));
-        return banner;
+    /** Get update: there while a newer version is on the releases page, which Android won't let the launcher install itself. */
+    private TextView updateButton() {
+        TextView b = ui.text("Get update", 13, Ui.SUN_TEXT, 750);
+        b.setGravity(Gravity.CENTER); b.setSingleLine(true);
+        // See-through over the bar, tinted the sun's yellow.
+        b.setBackground(Ui.states(ui.round(0x33ffc75a, 10, Ui.SUN, 1), ui.round(0x59ffc75a, 10, Ui.SUN, 1),
+            ui.round(0x40ffc75a, 10, Color.WHITE, 2.5f)));
+        b.setPadding(ui.dp(14), ui.dp(8), ui.dp(14), ui.dp(8));
+        b.setFocusable(true); b.setClickable(true);
+        b.setOnClickListener(v -> open(prefs.getString("update_url", SOURCE + "/releases")));
+        b.setVisibility(View.GONE);
+        return b;
     }
     /** Looks for a newer release at most every few hours, in the background; offline, it tries again next time. */
     private void checkForUpdate() {
@@ -333,15 +320,10 @@ public class LauncherActivity extends Activity {
     }
     private void showUpdate() {
         String tag = prefs.getString("update_tag", null);
-        boolean show = tag != null && UpdateCheck.versionCode(tag) > BuildConfig.VERSION_CODE
-            && !tag.equals(prefs.getString("update_dismissed", null));
+        boolean show = tag != null && UpdateCheck.versionCode(tag) > BuildConfig.VERSION_CODE;
         update.setVisibility(show ? View.VISIBLE : View.GONE);
         device.setVisibility(show ? View.GONE : View.VISIBLE);
-        if (!show) return;
-        String version = tag.substring(1);
-        updateTitle.setText("Version " + version + " is out");
-        updateText.setText("Install " + (BuildConfig.ECLIPSE ? "sms-android-eclipse-" : "sms-android-") + version
-            + "-arm64.apk over this one: your disc and saves stay.");
+        if (show) update.setContentDescription("Get update: version " + tag.substring(1) + " is out");
     }
 
     private LinearLayout statusBar() {

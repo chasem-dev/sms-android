@@ -171,12 +171,11 @@ as the desktop SMS Launcher does. Saves work in every language. The Eclipse
 app has no Language setting: Super Mario Eclipse plays in English.
 Android doesn't let the launcher update itself, so it checks this
 repository's GitHub releases when it opens (at most every six hours) and,
-when a newer version is out, shows it in the top bar with **Get update**,
+when a newer version is out, shows a **Get update** button in the top bar,
 which opens the release page. A full release hears of full releases; a
 preview also hears of newer previews, as the desktop launcher's Stable and
 Beta channels do. The new APK installs over the old one, keeping the disc and
-saves, because every release is signed with the same key. The × hides the
-notice until the next version.
+saves, because every release is signed with the same key.
 **Picture sharpness** is the internal resolution: Original (1×, the
 GameCube's 640×528, the default), Sharper (2×), Very sharp (3×) or
 Sharpest (4×). Higher settings need more of the graphics chip.
