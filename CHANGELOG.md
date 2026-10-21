@@ -6,6 +6,10 @@ with those lines as its notes, and moves them under its heading. See AGENTS.md.
 
 ## Unreleased
 
+- The launcher's home screen has a Discord button at the top, which opens an invite to the Discord server.
+- The launcher says when a newer version is out, at the top of its home screen, with a button to its download page; previews hear of newer previews too.
+- Play in Deutsch, Español, Français, Italiano or Polski: choose Language under Settings → Gameplay, and the launcher downloads that language's pack (about 1 MB) when you next choose Play. Your saves work in every language.
+
 ## 1.1.0
 
 - 1.1.0 is a full release: the new launcher look, controller navigation in the launcher and touch screen controls from the 1.0.1 preview now reach everyone.

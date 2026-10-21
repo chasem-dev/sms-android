@@ -55,11 +55,13 @@ public class LauncherActivity extends Activity {
     // The Eclipse app's: the disc it is made from, and its download and patch.
     private EclipseDisc eclipse;
     private boolean eclipseWorking;
+    // The language packs the game plays (its tools/mods/language-packs.json).
+    private final List<LanguagePack> languages = new ArrayList<>();
 
     // The home screen
     private FrameLayout scene;
-    private LinearLayout home, topBar, hero, statusBar, play, stepBox, taskBox, hints;
-    private TextView heroText, playLabel, stepLabel, stepText, stepLink, statusText, taskTitle, taskPercent, taskDetail, taskStop, notice;
+    private LinearLayout home, topBar, hero, statusBar, play, stepBox, taskBox, hints, update;
+    private TextView device, updateTitle, updateText, heroText, playLabel, stepLabel, stepText, stepLink, statusText, taskTitle, taskPercent, taskDetail, taskStop, notice;
     private ImageView playIcon;
     private View statusDot;
     private ProgressBar taskBar;
@@ -76,7 +78,7 @@ public class LauncherActivity extends Activity {
     private LinearLayout titleLine;
     private TextView rowDetail;
     private Switch hdSwitch;
-    private TextView hdBadge, hdDetail, hdButton, discDetail, discButton;
+    private TextView hdBadge, hdDetail, hdButton, discDetail, discButton, languageDetail;
     private ProgressBar hdBar;
 
     @Override public void onCreate(Bundle state) {
@@ -87,6 +89,9 @@ public class LauncherActivity extends Activity {
         prefs = getSharedPreferences("settings", MODE_PRIVATE);
         textures = new TexturePack(game);
         if (BuildConfig.ECLIPSE) eclipse = new EclipseDisc(disc);
+        for (int i = 0; i < BuildConfig.LANGUAGE_CODES.length; i++)
+            languages.add(new LanguagePack(BuildConfig.LANGUAGE_CODES[i], BuildConfig.LANGUAGE_NAMES[i], BuildConfig.LANGUAGE_RELEASE,
+                BuildConfig.LANGUAGE_URLS[i], BuildConfig.LANGUAGE_FILES[i], BuildConfig.LANGUAGE_MD5S[i], BuildConfig.LANGUAGE_SIZES[i]));
         ui = new Ui(this);
 
         // The art runs under the system bars.
@@ -175,9 +180,17 @@ public class LauncherActivity extends Activity {
         names.addView(version, ui.margins(Ui.wrap(), 0, 3, 0, 0));
         bar.addView(names, ui.margins(Ui.wrap(), 10, 0, 0, 0));
         bar.addView(new View(this), Ui.share(1));
-        TextView device = ui.text(Build.MODEL, 12, 0xffb7cdd6, 500);
+        // Join the Discord server, as the desktop launcher's Discord link.
+        ImageView discord = ui.iconButton(R.drawable.ic_discord, Color.WHITE,
+            Ui.states(ui.round(0xff5865f2, 10), ui.round(0xff4752c4, 10), ui.round(0xff5865f2, 10, Color.WHITE, 2.5f)), 7);
+        discord.setContentDescription("Join our Discord server");
+        discord.setOnClickListener(v -> open(DISCORD));
+        bar.addView(discord, ui.margins(new LinearLayout.LayoutParams(ui.dp(34), ui.dp(34)), 0, 0, 14, 0));
+        device = ui.text(Build.MODEL, 12, 0xffb7cdd6, 500);
         device.setSingleLine(true);
         bar.addView(device);
+        // In place of the device's name while a newer version is out.
+        bar.addView(update = updateBanner(), ui.margins(Ui.wrap(), 12, 0, 0, 0));
         return bar;
     }
     private LinearLayout hero() {
@@ -255,6 +268,80 @@ public class LauncherActivity extends Activity {
         taskBox.addView(taskBar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ui.dp(5)));
         panel.addView(taskBox, Ui.fill());
         return panel;
+    }
+
+    /** Says when a newer version is on the releases page, which Android won't let the launcher install itself. */
+    private LinearLayout updateBanner() {
+        LinearLayout banner = new LinearLayout(this); banner.setGravity(Gravity.CENTER_VERTICAL);
+        banner.setBackground(ui.round(0x33ffc75a, 10, Ui.SUN, 1));
+        banner.setPadding(ui.dp(12), ui.dp(4), ui.dp(4), ui.dp(4));
+        banner.setVisibility(View.GONE);
+        LinearLayout words = new LinearLayout(this); words.setOrientation(LinearLayout.VERTICAL);
+        updateTitle = ui.text("", 13, Ui.SUN_TEXT, 750); updateTitle.setSingleLine(true);
+        words.addView(updateTitle);
+        updateText = ui.text("", 11, Ui.MIST, 500); updateText.setSingleLine(true);
+        updateText.setEllipsize(android.text.TextUtils.TruncateAt.END); updateText.setMaxWidth(ui.dp(380));
+        words.addView(updateText, ui.margins(Ui.wrap(), 0, 3, 0, 0));
+        banner.addView(words);
+        TextView get = ui.glass("Get update"); get.setTextSize(12); get.setPadding(ui.dp(12), ui.dp(5), ui.dp(12), ui.dp(5));
+        get.setOnClickListener(v -> open(prefs.getString("update_url", SOURCE + "/releases")));
+        banner.addView(get, ui.margins(Ui.wrap(), 12, 0, 0, 0));
+        ImageView hide = ui.iconButton(R.drawable.ic_close, Color.WHITE, ui.glassBackground(), 7);
+        hide.setContentDescription("Hide until the next version");
+        hide.setOnClickListener(v -> {
+            prefs.edit().putString("update_dismissed", prefs.getString("update_tag", "")).apply();
+            showUpdate();
+            play.requestFocus();
+        });
+        banner.addView(hide, ui.margins(new LinearLayout.LayoutParams(ui.dp(30), ui.dp(30)), 6, 0, 0, 0));
+        return banner;
+    }
+    /** Looks for a newer release at most every few hours, in the background; offline, it tries again next time. */
+    private void checkForUpdate() {
+        showUpdate();
+        long now = System.currentTimeMillis();
+        if (Math.abs(now - prefs.getLong("update_checked", 0)) < UpdateCheck.INTERVAL_MS) return;
+        new Thread(() -> {
+            try {
+                UpdateCheck.Release newer = UpdateCheck.newer(releases(), BuildConfig.VERSION_CODE, UpdateCheck.isPreview(BuildConfig.VERSION_NAME));
+                SharedPreferences.Editor edit = prefs.edit().putLong("update_checked", now);
+                if (newer == null) edit.remove("update_tag").remove("update_url");
+                else edit.putString("update_tag", newer.tag).putString("update_url", newer.url);
+                edit.apply();
+                runOnUiThread(this::showUpdate);
+            } catch (Exception ignored) {}
+        }, "update-check").start();
+    }
+    private static List<UpdateCheck.Release> releases() throws IOException, org.json.JSONException {
+        java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(UpdateCheck.RELEASES).openConnection();
+        try {
+            c.setConnectTimeout(15000); c.setReadTimeout(15000);
+            c.setRequestProperty("Accept", "application/vnd.github+json");
+            c.setRequestProperty("User-Agent", "SMS Launcher for Android");
+            if (c.getResponseCode() != 200) throw new IOException("GitHub answered " + c.getResponseCode());
+            ByteArrayOutputStream body = new ByteArrayOutputStream();
+            try (InputStream in = c.getInputStream()) { copy(in, body, 4L << 20); }
+            org.json.JSONArray list = new org.json.JSONArray(body.toString("UTF-8"));
+            List<UpdateCheck.Release> releases = new ArrayList<>();
+            for (int i = 0; i < list.length(); i++) {
+                org.json.JSONObject r = list.getJSONObject(i);
+                if (!r.optBoolean("draft"))
+                    releases.add(new UpdateCheck.Release(r.optString("tag_name"), r.optString("html_url"), r.optBoolean("prerelease")));
+            }
+            return releases;
+        } finally { c.disconnect(); }
+    }
+    private void showUpdate() {
+        String tag = prefs.getString("update_tag", null);
+        boolean show = tag != null && UpdateCheck.versionCode(tag) > BuildConfig.VERSION_CODE
+            && !tag.equals(prefs.getString("update_dismissed", null));
+        update.setVisibility(show ? View.VISIBLE : View.GONE);
+        device.setVisibility(show ? View.GONE : View.VISIBLE);
+        if (!show) return;
+        String version = tag.substring(1);
+        updateTitle.setText("Version " + version + " is out");
+        updateText.setText("Install " + (BuildConfig.ECLIPSE ? "sms-android-eclipse-" : "sms-android-") + version
+            + "-arm64.apk over this one: your disc and saves stay.");
     }
 
     private LinearLayout statusBar() {
@@ -463,10 +550,42 @@ public class LauncherActivity extends Activity {
             "frame_rate", new String[]{"30", "60"}, new String[]{"30 FPS", "60 FPS"}, "60");
         choiceRow(play, "Volume", null, "volume", new String[]{"0", "25", "50", "75", "100"},
             new String[]{"Off", "25", "50", "75", "100"}, "100");
+        // Super Mario Eclipse has no language packs; its own text is English.
+        if (!BuildConfig.ECLIPSE) languageRow(play);
         LinearLayout camera = section(page, "Camera");
         switchRow(camera, "Invert left/right", "Turns the camera the other way when you push the C-stick sideways.", "camera_invert_x", false);
         switchRow(camera, "Invert up/down", "Tilts the camera the other way when you push the C-stick up or down.", "camera_invert_y", false);
         return page;
+    }
+    /** Language: English, the disc's own, or one of the game's language packs, each in its own name. */
+    private void languageRow(LinearLayout section) {
+        String[] labels = new String[languages.size() + 1];
+        labels[0] = "English";
+        int selected = 0;
+        for (int i = 0; i < languages.size(); i++) {
+            labels[i + 1] = languages.get(i).name;
+            if (languages.get(i).code.equals(prefs.getString("language", "en"))) selected = i + 1;
+        }
+        row(section, "Language", "", ui.dropdown(labels, selected, i -> {
+            prefs.edit().putString("language", i == 0 ? "en" : languages.get(i - 1).code).apply();
+            refreshLanguage();
+        }));
+        languageDetail = rowDetail; languageDetail.setVisibility(View.VISIBLE);
+    }
+    /** The chosen language's pack, or null for English. */
+    private LanguagePack chosenLanguage() {
+        if (BuildConfig.ECLIPSE) return null;
+        String code = prefs.getString("language", "en");
+        for (LanguagePack pack : languages) if (pack.code.equals(code)) return pack;
+        return null;
+    }
+    private void refreshLanguage() {
+        if (languageDetail == null) return;
+        LanguagePack pack = chosenLanguage();
+        languageDetail.setText(pack == null
+            ? "Plays the game's text, menus and pictures in another language. Its pack downloads before the game starts. Your saves work in every language."
+            : pack.installed(game) ? pack.name + " is downloaded. Your saves work in every language."
+            : "The " + pack.name + " language pack (about " + pack.sizeText() + ") downloads before the game starts.");
     }
     private View controlsPage() {
         LinearLayout page = pageColumn();
@@ -573,6 +692,7 @@ public class LauncherActivity extends Activity {
         super.onResume();
         hints.setVisibility(controllerConnected() ? View.VISIBLE : View.GONE);
         if (!busy) refresh();
+        checkForUpdate();
         if (!settingsOpen() && getCurrentFocus() == null) play.requestFocus();
     }
     @Override protected void onDestroy() { io.shutdown(); super.onDestroy(); }
@@ -591,6 +711,8 @@ public class LauncherActivity extends Activity {
             openSettings(GRAPHICS);
             return;
         }
+        LanguagePack language = chosenLanguage();
+        if (language != null && !language.installed(game)) { installLanguage(language); return; }
         try {
             writeSettings();
             Intent launch = new Intent(this, GameActivity.class);
@@ -601,11 +723,29 @@ public class LauncherActivity extends Activity {
         }
         catch (IOException e) { notice(e.getMessage()); }
     }
+    /** Downloads the chosen language's pack, then starts the game in it. */
+    private void installLanguage(LanguagePack pack) {
+        startTask("Installing " + pack.name, null);
+        taskProgress("Downloading " + pack.name + "…");
+        io.execute(() -> {
+            String failure = null;
+            try { pack.install(game, text -> runOnUiThread(() -> taskProgress(text))); }
+            catch (Exception e) { failure = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage().replaceAll("\\.$", ""); }
+            final String error = failure;
+            runOnUiThread(() -> {
+                endTask();
+                if (error == null) launch();
+                else notice("The " + pack.name + " language pack could not be downloaded (" + error
+                    + "). Choose Play to try again, or choose English under Settings → Gameplay.");
+            });
+        });
+    }
     private void writeSettings() throws IOException {
         ControllerProfiles.writeGameFile(this);
         String text = "frame_rate=" + prefs.getString("frame_rate", "60") + "\nresolution=" + prefs.getString("resolution", "1")
             + "\nwidescreen=" + prefs.getString("widescreen", "16:9") + "\nvolume=" + prefs.getString("volume", "100")
             + "\nmsaa=0\nfullscreen=on\nvsync=on\n"
+            + "language=" + (chosenLanguage() == null ? "en" : chosenLanguage().code) + "\n"
             // The touch controls are a GameCube controller, so the game shows its own buttons.
             + "button_prompts=" + (prefs.getBoolean("touch_controls", false) ? "gamecube" : "auto") + "\n"
             // A GPU without BC7 gets the pack decoded to RGBA; images held so
@@ -659,6 +799,7 @@ public class LauncherActivity extends Activity {
             : BuildConfig.ECLIPSE && eclipse.sunshineImported() ? "Super Mario Sunshine (US), waiting for the Eclipse download" : "Not imported yet");
         discButton.setText(ready ? "Replace" : "Import");
         refreshTextures();
+        refreshLanguage();
     }
 
     // ----- Long work (imports, downloads), shown under Play.

@@ -12,8 +12,11 @@ import android.graphics.drawable.StateListDrawable;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
 
@@ -179,6 +182,36 @@ final class Ui {
             group.addView(option, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         }
         return group;
+    }
+
+    /** A dropdown list, as the desktop launcher's selects: the choice and a chevron, the list in a card. */
+    Spinner dropdown(String[] labels, int selected, java.util.function.IntConsumer chosen) {
+        Spinner s = new Spinner(context, Spinner.MODE_DROPDOWN);
+        s.setAdapter(new ArrayAdapter<String>(context, 0, labels) {
+            @Override public View getView(int position, View reuse, ViewGroup parent) {
+                TextView v = reuse instanceof TextView ? (TextView)reuse : text("", 13, 0xff31545b, 650);
+                v.setText(labels[position] + "  ▾"); v.setSingleLine(true);
+                return v;
+            }
+            @Override public View getDropDownView(int position, View reuse, ViewGroup parent) {
+                TextView v = reuse instanceof TextView ? (TextView)reuse : text("", 14, BODY, 600);
+                v.setText(labels[position]); v.setSingleLine(true);
+                v.setPadding(dp(16), dp(11), dp(24), dp(11));
+                v.setBackground(states(new GradientDrawable(), round(TEAL_SOFT, 0), round(TEAL_SOFT, 0)));
+                return v;
+            }
+        });
+        s.setSelection(selected, false);
+        s.setBackground(subtleBackground()); s.setPadding(dp(13), dp(8), dp(13), dp(8));
+        s.setPopupBackgroundDrawable(round(CARD, 10, BORDER, 1));
+        s.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            private int current = selected;
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position != current) { current = position; chosen.accept(position); }
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
+        return s;
     }
 
     /** A thin bar: sun yellow on a pale track, for the dark panels or cards. */
