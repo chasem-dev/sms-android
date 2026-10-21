@@ -24,6 +24,10 @@ def sourceRevision = { File root ->
 }
 // The HD texture extras release the game pins, which the launcher downloads.
 def textureExtras = new groovy.json.JsonSlurper().parse(new File(portRoot, 'tools/mods/texture-extras.json'))
+// The language packs the game plays, which the launcher downloads when one is chosen.
+def languagePacks = new groovy.json.JsonSlurper().parse(new File(portRoot, 'tools/mods/language-packs.json'))
+def languageCodes = languagePacks.languages.keySet().sort()
+def javaArray = { values -> '{' + values.join(', ') + '}' }
 def launcherRevision = sourceRevision(file('..'))
 def gameRevision = sourceRevision(portRoot)
 
@@ -43,6 +47,13 @@ android {
             buildConfigField 'String', "TEXTURE_EXTRAS_${key.toUpperCase()}", groovy.json.JsonOutput.toJson(textureExtras[key] as String)
         }
         buildConfigField 'long', 'TEXTURE_EXTRAS_SIZE', "${textureExtras.size as long}L"
+        buildConfigField 'String', 'LANGUAGE_RELEASE', groovy.json.JsonOutput.toJson(languagePacks.name as String)
+        buildConfigField 'String[]', 'LANGUAGE_CODES', javaArray(languageCodes.collect { groovy.json.JsonOutput.toJson(it as String) })
+        ['name', 'url', 'file', 'md5'].each { key ->
+            buildConfigField 'String[]', "LANGUAGE_${key.toUpperCase()}S",
+                javaArray(languageCodes.collect { groovy.json.JsonOutput.toJson(languagePacks.languages[it][key] as String) })
+        }
+        buildConfigField 'long[]', 'LANGUAGE_SIZES', javaArray(languageCodes.collect { "${languagePacks.languages[it].size as long}L" })
         ndk { abiFilters 'arm64-v8a' }
         externalNativeBuild {
             cmake {

@@ -55,6 +55,8 @@ public class LauncherActivity extends Activity {
     // The Eclipse app's: the disc it is made from, and its download and patch.
     private EclipseDisc eclipse;
     private boolean eclipseWorking;
+    // The language packs the game plays (its tools/mods/language-packs.json).
+    private final List<LanguagePack> languages = new ArrayList<>();
 
     // The home screen
     private FrameLayout scene;
@@ -76,7 +78,7 @@ public class LauncherActivity extends Activity {
     private LinearLayout titleLine;
     private TextView rowDetail;
     private Switch hdSwitch;
-    private TextView hdBadge, hdDetail, hdButton, discDetail, discButton;
+    private TextView hdBadge, hdDetail, hdButton, discDetail, discButton, languageDetail;
     private ProgressBar hdBar;
 
     @Override public void onCreate(Bundle state) {
@@ -87,6 +89,9 @@ public class LauncherActivity extends Activity {
         prefs = getSharedPreferences("settings", MODE_PRIVATE);
         textures = new TexturePack(game);
         if (BuildConfig.ECLIPSE) eclipse = new EclipseDisc(disc);
+        for (int i = 0; i < BuildConfig.LANGUAGE_CODES.length; i++)
+            languages.add(new LanguagePack(BuildConfig.LANGUAGE_CODES[i], BuildConfig.LANGUAGE_NAMES[i], BuildConfig.LANGUAGE_RELEASE,
+                BuildConfig.LANGUAGE_URLS[i], BuildConfig.LANGUAGE_FILES[i], BuildConfig.LANGUAGE_MD5S[i], BuildConfig.LANGUAGE_SIZES[i]));
         ui = new Ui(this);
 
         // The art runs under the system bars.
@@ -463,10 +468,42 @@ public class LauncherActivity extends Activity {
             "frame_rate", new String[]{"30", "60"}, new String[]{"30 FPS", "60 FPS"}, "60");
         choiceRow(play, "Volume", null, "volume", new String[]{"0", "25", "50", "75", "100"},
             new String[]{"Off", "25", "50", "75", "100"}, "100");
+        // Super Mario Eclipse has no language packs; its own text is English.
+        if (!BuildConfig.ECLIPSE) languageRow(play);
         LinearLayout camera = section(page, "Camera");
         switchRow(camera, "Invert left/right", "Turns the camera the other way when you push the C-stick sideways.", "camera_invert_x", false);
         switchRow(camera, "Invert up/down", "Tilts the camera the other way when you push the C-stick up or down.", "camera_invert_y", false);
         return page;
+    }
+    /** Language: English, the disc's own, or one of the game's language packs, each in its own name. */
+    private void languageRow(LinearLayout section) {
+        String[] labels = new String[languages.size() + 1];
+        labels[0] = "English";
+        int selected = 0;
+        for (int i = 0; i < languages.size(); i++) {
+            labels[i + 1] = languages.get(i).name;
+            if (languages.get(i).code.equals(prefs.getString("language", "en"))) selected = i + 1;
+        }
+        row(section, "Language", "", ui.dropdown(labels, selected, i -> {
+            prefs.edit().putString("language", i == 0 ? "en" : languages.get(i - 1).code).apply();
+            refreshLanguage();
+        }));
+        languageDetail = rowDetail; languageDetail.setVisibility(View.VISIBLE);
+    }
+    /** The chosen language's pack, or null for English. */
+    private LanguagePack chosenLanguage() {
+        if (BuildConfig.ECLIPSE) return null;
+        String code = prefs.getString("language", "en");
+        for (LanguagePack pack : languages) if (pack.code.equals(code)) return pack;
+        return null;
+    }
+    private void refreshLanguage() {
+        if (languageDetail == null) return;
+        LanguagePack pack = chosenLanguage();
+        languageDetail.setText(pack == null
+            ? "Plays the game's text, menus and pictures in another language. Its pack downloads before the game starts. Your saves work in every language."
+            : pack.installed(game) ? pack.name + " is downloaded. Your saves work in every language."
+            : "The " + pack.name + " language pack (about " + pack.sizeText() + ") downloads before the game starts.");
     }
     private View controlsPage() {
         LinearLayout page = pageColumn();
@@ -591,6 +628,8 @@ public class LauncherActivity extends Activity {
             openSettings(GRAPHICS);
             return;
         }
+        LanguagePack language = chosenLanguage();
+        if (language != null && !language.installed(game)) { installLanguage(language); return; }
         try {
             writeSettings();
             Intent launch = new Intent(this, GameActivity.class);
@@ -601,11 +640,29 @@ public class LauncherActivity extends Activity {
         }
         catch (IOException e) { notice(e.getMessage()); }
     }
+    /** Downloads the chosen language's pack, then starts the game in it. */
+    private void installLanguage(LanguagePack pack) {
+        startTask("Installing " + pack.name, null);
+        taskProgress("Downloading " + pack.name + "…");
+        io.execute(() -> {
+            String failure = null;
+            try { pack.install(game, text -> runOnUiThread(() -> taskProgress(text))); }
+            catch (Exception e) { failure = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage().replaceAll("\\.$", ""); }
+            final String error = failure;
+            runOnUiThread(() -> {
+                endTask();
+                if (error == null) launch();
+                else notice("The " + pack.name + " language pack could not be downloaded (" + error
+                    + "). Choose Play to try again, or choose English under Settings → Gameplay.");
+            });
+        });
+    }
     private void writeSettings() throws IOException {
         ControllerProfiles.writeGameFile(this);
         String text = "frame_rate=" + prefs.getString("frame_rate", "60") + "\nresolution=" + prefs.getString("resolution", "1")
             + "\nwidescreen=" + prefs.getString("widescreen", "16:9") + "\nvolume=" + prefs.getString("volume", "100")
             + "\nmsaa=0\nfullscreen=on\nvsync=on\n"
+            + "language=" + (chosenLanguage() == null ? "en" : chosenLanguage().code) + "\n"
             // The touch controls are a GameCube controller, so the game shows its own buttons.
             + "button_prompts=" + (prefs.getBoolean("touch_controls", false) ? "gamecube" : "auto") + "\n"
             // A GPU without BC7 gets the pack decoded to RGBA; images held so
@@ -659,6 +716,7 @@ public class LauncherActivity extends Activity {
             : BuildConfig.ECLIPSE && eclipse.sunshineImported() ? "Super Mario Sunshine (US), waiting for the Eclipse download" : "Not imported yet");
         discButton.setText(ready ? "Replace" : "Import");
         refreshTextures();
+        refreshLanguage();
     }
 
     // ----- Long work (imports, downloads), shown under Play.

@@ -83,10 +83,11 @@ the Eclipse mods built in (the port's `-DSMS_ECLIPSE=ON`, which fetches their
 sources at configure time; see the port's `docs/ECLIPSE.md`), and checked
 against the mods' declarations after linking.
 
-`tests/check-input-monitor.sh`, `tests/check-controller-mapping.sh` and
-`tests/check-texture-pack.sh` run the input monitor's, controller mapping's and
-texture pack installer's unit tests without the Android SDK, and
-`tests/check-vcdiff.sh` the Eclipse disc patcher's.
+`tests/check-input-monitor.sh`, `tests/check-controller-mapping.sh`,
+`tests/check-texture-pack.sh` and `tests/check-language-pack.sh` run the input
+monitor's, controller mapping's, texture pack installer's and language pack
+installer's unit tests without the Android SDK, and `tests/check-vcdiff.sh` the
+Eclipse disc patcher's.
 
 ## Releases
 
@@ -158,6 +159,14 @@ The button then reads **Play**. The gear beside it (or Start on a controller)
 opens Settings: Gameplay, Controls, Graphics, Performance, Saves & data and
 About. Changes save as you make them. A controller's D-pad or stick moves
 through the launcher, A selects and B goes back.
+**Language** under Gameplay plays the game in English (the default, the
+disc's own text) or in any language pack the game's
+`tools/mods/language-packs.json` lists: Deutsch, Español, Français, Italiano
+and Polski. Choosing Play downloads the chosen language's pack (about 1 MB,
+from the [HD texture extras](https://github.com/chasem-dev/sms-hd-texture-extras#language-packs)
+releases), checks it against its MD5 and installs it in private app storage,
+as the desktop SMS Launcher does. Saves work in every language. The Eclipse
+app has no Language setting: Super Mario Eclipse plays in English.
 **Picture sharpness** is the internal resolution: Original (1×, the
 GameCube's 640×528, the default), Sharper (2×), Very sharp (3×) or
 Sharpest (4×). Higher settings need more of the graphics chip.
