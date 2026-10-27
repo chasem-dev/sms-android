@@ -4,6 +4,12 @@
   <a href="https://discord.gg/97sVPsbxsY"><img src="https://img.shields.io/badge/Discord-Join%20the%20server-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Join our Discord"></a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/chasem-dev/sms-launcher"><img src="docs/ports/pc.svg" width="32%" alt="Also on PC: Windows, macOS and Linux. Get SMS Launcher."></a>
+  <a href="https://github.com/chasem-dev/sms-switch"><img src="docs/ports/switch.svg" width="32%" alt="Also on Switch: homebrew, up to 60 fps. Download the NRO."></a>
+  <a href="https://github.com/chasem-dev/sms-iphone-ipad"><img src="docs/ports/ios.svg" width="32%" alt="Also on iPhone and iPad: native port in progress, coming soon."></a>
+</p>
+
 # SMS Launcher for Android
 
 A native Android launcher for the [Super Mario Sunshine PC port](https://github.com/chasem-dev/sms-pc-port).
