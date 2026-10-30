@@ -56,38 +56,102 @@ controlled matching-camera benchmark.
 
 ## Build
 
-The game comes from the `sms-port` submodule, pinned to the
-[sms-pc-port](https://github.com/chasem-dev/sms-pc-port) commit this launcher
-builds. Clone with submodules:
+Most players should [download](#download) an APK instead. To build your own,
+you need a computer running Linux, macOS or Windows (through WSL), about 8 GB
+of free space, and an internet connection. You don't need Android Studio, and
+you don't install the Android SDK yourself: the first `./build.sh` downloads
+Google's Android SDK tools into `~/Android/Sdk`, then the SDK packages the
+build needs (`platforms;android-35`, `build-tools;36.0.0`,
+`ndk;28.2.13676358`, `cmake;3.22.1` and `platform-tools`). Those are Google's
+SDK packages, not MSYS2 or Linux packages.
+
+### 1. Install the basic tools
+
+**Windows:** build in WSL, a Linux system inside Windows; MSYS2 and Git Bash
+aren't supported. Open PowerShell as administrator and run `wsl --install`,
+restart, then open **Ubuntu** from the Start menu and choose a user name and
+password. Run every command below in that Ubuntu window, starting with the
+Ubuntu ones.
+
+**Ubuntu or Debian** (and WSL):
 
 ```sh
+sudo apt update
+sudo apt install openjdk-17-jdk python3 git curl unzip patch
+```
+
+**macOS** (untested): install the Xcode command line tools with
+`xcode-select --install`, and a JDK 17 or newer.
+
+### 2. Download the source
+
+```sh
+cd ~
 git clone --recurse-submodules https://github.com/chasem-dev/sms-android.git
+cd sms-android
 ```
 
-To build a different port checkout, set `SMS_PORT_ROOT` to its location.
-Install a JDK (17 or newer), Python 3, CMake, Git, curl, tar, patch, and the
-Android SDK. Install these SDK packages:
+On Windows, clone inside Ubuntu's home folder like this, not under `/mnt/c`:
+building from the Windows drive is much slower.
 
-```
-platform-tools platforms;android-35 build-tools;36.0.0
-ndk;28.2.13676358 cmake;3.22.1
-```
-
-Accept the SDK licenses, set `ANDROID_HOME` and `JAVA_HOME`, and run:
+### 3. Build
 
 ```sh
 ./build.sh
 ```
 
-The script downloads checksum-verified SDL 2.32.10, initializes the port's
-decompilation submodule, and uses the checked-in Gradle wrapper to build only
-`arm64-v8a`. The installable debug APK is
-`app/build/outputs/apk/sunshine/debug/app-sunshine-debug.apk`.
-`SMS_ECLIPSE=1 ./build.sh` builds the Super Mario Eclipse app instead,
-`app/build/outputs/apk/eclipse/debug/app-eclipse-debug.apk`: the game with
-the Eclipse mods built in (the port's `-DSMS_ECLIPSE=ON`, which fetches their
-sources at configure time; see the port's `docs/ECLIPSE.md`), and checked
-against the mods' declarations after linking.
+The first build downloads about 1.5 GB and takes a while; later builds only
+redo what changed. It ends with the APK's location:
+
+- Super Mario Sunshine: `app/build/outputs/apk/sunshine/debug/app-sunshine-debug.apk`
+- `SMS_ECLIPSE=1 ./build.sh` builds the Super Mario Eclipse app instead:
+  `app/build/outputs/apk/eclipse/debug/app-eclipse-debug.apk`
+
+If the build runs out of memory, limit it with `./build.sh --max-workers=2`.
+
+### 4. Install it on your phone
+
+Copy the APK to your phone and open it there; Android asks you to allow
+installing apps from your file manager or browser. On Windows, copy it out of
+Ubuntu first, for example to your Downloads folder (with your Windows user
+name):
+
+```sh
+cp app/build/outputs/apk/sunshine/debug/app-sunshine-debug.apk /mnt/c/Users/<you>/Downloads/
+```
+
+With USB debugging on, `~/Android/Sdk/platform-tools/adb install -r <apk>`
+installs it directly.
+
+Your build is signed with your own key, so it can't install over an APK from
+the Releases page, or the other way round. Back up your save (Settings →
+Saves & data) and uninstall the other one first; uninstalling removes the
+imported disc too.
+
+### Update
+
+```sh
+cd ~/sms-android
+git pull
+./build.sh
+```
+
+### Details for developers
+
+`build.sh` uses the SDK in `ANDROID_HOME` (or `ANDROID_SDK_ROOT`), then the
+one named by `local.properties`, then `~/Android/Sdk`
+(`~/Library/Android/sdk` on macOS), installing whichever of the packages
+above are missing; an Android Studio SDK works. Java comes from `JAVA_HOME`,
+`PATH` or Android Studio. It downloads checksum-verified SDL 2.32.10,
+initializes the port's decompilation submodule, and uses the checked-in
+Gradle wrapper to build only `arm64-v8a`; extra arguments go to Gradle.
+The game comes from the `sms-port` submodule, pinned to the
+[sms-pc-port](https://github.com/chasem-dev/sms-pc-port) commit this launcher
+builds; set `SMS_PORT_ROOT` to build a different port checkout. The Eclipse
+build is the game with the Eclipse mods built in (the port's
+`-DSMS_ECLIPSE=ON`, which fetches their sources at configure time; see the
+port's `docs/ECLIPSE.md`), checked against the mods' declarations after
+linking.
 
 `tests/check-input-monitor.sh`, `tests/check-controller-mapping.sh`,
 `tests/check-texture-pack.sh`, `tests/check-language-pack.sh` and
