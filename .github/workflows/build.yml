@@ -51,11 +51,3 @@ jobs:
       - name: Compiler cache statistics
         if: always()
         run: sccache --show-stats
-      - uses: actions/upload-artifact@v4
-        with:
-          name: sms-android-debug-apk
-          path: app/build/outputs/apk/sunshine/debug/app-sunshine-debug.apk
-      - uses: actions/upload-artifact@v4
-        with:
-          name: sms-android-eclipse-debug-apk
-          path: app/build/outputs/apk/eclipse/debug/app-eclipse-debug.apk

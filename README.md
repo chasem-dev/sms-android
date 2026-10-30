@@ -6,15 +6,15 @@
 
 <p align="center">
   <a href="https://github.com/chasem-dev/sms-launcher"><img src="docs/ports/pc.svg" width="32%" alt="Also on PC: Windows, macOS and Linux. Get SMS Launcher."></a>
-  <a href="https://github.com/chasem-dev/sms-switch"><img src="docs/ports/switch.svg" width="32%" alt="Also on Switch: homebrew, up to 60 fps. Download the NRO."></a>
+  <a href="https://github.com/chasem-dev/sms-switch"><img src="docs/ports/switch.svg" width="32%" alt="Also on Switch: homebrew, up to 60 fps. Build the NRO from source."></a>
   <a href="https://github.com/chasem-dev/sms-iphone-ipad"><img src="docs/ports/ios.svg" width="32%" alt="Also on iPhone and iPad: native port in progress, coming soon."></a>
 </p>
 
 # SMS Launcher for Android
 
 A native Android launcher for the [Super Mario Sunshine PC port](https://github.com/chasem-dev/sms-pc-port).
-The APK includes the compiled port and SDL, but no game data: you import a disc
-image made from your own copy. It targets ARM64 Android 10 or newer, with
+You build the APK yourself (see [Build](#build)): it includes the compiled port
+and SDL, but no game data, and you import a disc image made from your own copy. It targets ARM64 Android 10 or newer, with
 GLES 3.1 or newer, and a controller or the on-screen touch controls. AYN Thor
 and similar modern Android handhelds are the intended hardware. On Windows,
 macOS and Linux, use the desktop
@@ -27,17 +27,21 @@ macOS and Linux, use the desktop
 
 ## Download
 
-APKs are published on this repository's
-[Releases](https://github.com/chasem-dev/sms-android/releases) page: full
-releases, starting with 1.0.0, and tester previews between them as
-pre-releases. Each has two: `sms-android-<version>-arm64.apk` plays Super Mario
-Sunshine, and `sms-android-eclipse-<version>-arm64.apk` (SMS Eclipse) plays
+Prebuilt APKs are no longer published: an APK contains the compiled game, so
+build one from source instead ([Build](#build)). The
+[Releases](https://github.com/chasem-dev/sms-android/releases) page still
+lists each full release and tester preview, with its notes and the tag to
+build. There are two apps: the Sunshine one (`./build.sh`) and SMS Eclipse
+(`SMS_ECLIPSE=1 ./build.sh`), which plays
 [Super Mario Eclipse](https://gamebanana.com/mods/536309). They install side
-by side, each with its own disc and saves. Install over the previous release
-or preview to keep your imported disc and saves. Previews 1 to
-17 were published from the desktop launcher's repository as
-`android-pr-107-v*` pre-releases; this repository's builds update them in place.
+by side, each with its own disc and saves.
 [CHANGELOG.md](CHANGELOG.md) lists what changed in each release and preview.
+
+An APK you build is signed with your own debug key, so Android won't install
+it over an APK downloaded from an earlier release. Before you uninstall the
+old one, save your progress with **Settings → Saves and data → Back up your
+save**, then restore it in the new app with **Restore a backup** and import
+your disc again.
 
 ## Status
 
@@ -168,16 +172,15 @@ Merging a pull request into `main` publishes a release automatically, through
 
 1. It numbers the next preview of `smsAndroidVersion` (`0.2.0-preview.1`,
    `0.2.0-preview.2`, …) from the existing release tags.
-2. It builds the release APKs, Sunshine's and Eclipse's, with `release.sh`,
-   signed with the keystore in the `ANDROID_KEYSTORE_BASE64` repository secret.
-3. It publishes a GitHub pre-release with the Unreleased lines as its notes,
+2. It publishes a GitHub pre-release with the Unreleased lines as its notes
+   and no APK (it would contain the compiled game), naming the tag to build,
    then commits those lines under the new preview's heading in `CHANGELOG.md`.
 
 Pull requests with nothing under Unreleased (tests, CI, docs) publish nothing.
 To start a new release line, raise `smsAndroidVersion` in `gradle.properties`;
 previews then count from 1 again. Each version allows 99 previews. Pull
-requests are built by `.github/workflows/build.yml`, which uploads the debug
-APK as an artifact.
+requests are built and tested by `.github/workflows/build.yml`, which keeps no
+APK.
 
 To publish a full release instead of the next preview, set
 `smsAndroidFullRelease=true` and `smsAndroidVersion` to the release's number in
@@ -194,7 +197,8 @@ To move the game, check out the new commit in the submodule
 (`git -C sms-port checkout <commit>`), commit it with a changelog line for
 each change testers will notice, and merge.
 
-`./release.sh` builds the same signed APKs locally into `dist/`. It refuses to
+`./release.sh` builds the maintainer's signed APKs locally into `dist/`, for
+testing; they are not published. To play, use `./build.sh`. It refuses to
 run with uncommitted changes, so the footer names clean source revisions. It
 signs with `~/.android/debug.keystore` unless `SMS_ANDROID_KEYSTORE` (and
 `SMS_ANDROID_KEYSTORE_PASS`, `SMS_ANDROID_KEY_ALIAS`) name another key, and

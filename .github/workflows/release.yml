@@ -1,7 +1,7 @@
 name: Release
 
 # Each push to main (a merged pull request) whose CHANGELOG.md has lines under
-# Unreleased publishes the next preview APK with those lines as its notes, or,
+# Unreleased publishes the next preview with those lines as its notes, or,
 # with smsAndroidFullRelease=true in gradle.properties, the full release.
 on:
   push:
@@ -56,46 +56,6 @@ jobs:
           echo "preview=$preview" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           echo "name=$name" >> "$GITHUB_OUTPUT"
-      - uses: actions/setup-java@v4
-        if: steps.version.outputs.skip != 'true'
-        with:
-          distribution: temurin
-          java-version: '17'
-      - uses: gradle/actions/setup-gradle@v4
-        if: steps.version.outputs.skip != 'true'
-      - name: Install compiler cache
-        if: steps.version.outputs.skip != 'true'
-        uses: Mozilla-Actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
-        with:
-          version: v0.18.0
-      # The port's CMake runs each C/C++ compile through SMS_COMPILER_CACHE,
-      # so only changed sources recompile. The cache lives in GitHub's cache.
-      - name: Enable compiler cache
-        if: steps.version.outputs.skip != 'true'
-        run: |
-          echo "SMS_COMPILER_CACHE=$(command -v sccache)" >> "$GITHUB_ENV"
-          echo "SCCACHE_GHA_ENABLED=on" >> "$GITHUB_ENV"
-          echo "SCCACHE_IGNORE_SERVER_IO_ERROR=1" >> "$GITHUB_ENV"
-      - name: Install Android SDK packages
-        if: steps.version.outputs.skip != 'true'
-        run: |
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
-            'platforms;android-35' 'build-tools;36.0.0' 'ndk;28.2.13676358' 'cmake;3.22.1' > /dev/null
-      - name: Build and sign the APK
-        if: steps.version.outputs.skip != 'true'
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          SMS_ANDROID_PREVIEW: ${{ steps.version.outputs.preview }}
-        run: |
-          [[ -n "$ANDROID_KEYSTORE_BASE64" ]] || { echo '::error::Add the signing keystore as the ANDROID_KEYSTORE_BASE64 secret.'; exit 1; }
-          export SMS_ANDROID_KEYSTORE="$RUNNER_TEMP/release.keystore"
-          base64 -d <<< "$ANDROID_KEYSTORE_BASE64" > "$SMS_ANDROID_KEYSTORE"
-          ./release.sh --max-workers=4
-          rm -f "$SMS_ANDROID_KEYSTORE"
-      - name: Compiler cache statistics
-        if: always() && steps.version.outputs.skip != 'true'
-        run: sccache --show-stats
       - name: Publish the release
         if: steps.version.outputs.skip != 'true'
         env:
@@ -106,9 +66,11 @@ jobs:
         run: |
           kind=--prerelease
           [[ $PREVIEW != 0 ]] || kind=--latest
-          gh release create "v$NAME" "dist/sms-android-$NAME-arm64.apk" "dist/sms-android-$NAME-arm64.apk.sha256" \
-            "dist/sms-android-eclipse-$NAME-arm64.apk" "dist/sms-android-eclipse-$NAME-arm64.apk.sha256" \
-            "$kind" --target "$SHA" --title "Android $NAME" --notes-file "$RUNNER_TEMP/release-notes.md"
+          # No APK: it would contain the compiled game. The release names the
+          # source revision to build (README, Build).
+          printf '\n\nBuild this version from source with `git checkout v%s`: see the [README](https://github.com/%s#build).\n' \
+            "$NAME" "$GITHUB_REPOSITORY" >> "$RUNNER_TEMP/release-notes.md"
+          gh release create "v$NAME" "$kind" --target "$SHA" --title "Android $NAME" --notes-file "$RUNNER_TEMP/release-notes.md"
       - name: Move the released lines out of Unreleased
         if: steps.version.outputs.skip != 'true'
         env:
